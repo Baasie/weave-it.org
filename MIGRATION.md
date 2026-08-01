@@ -265,10 +265,47 @@ address to keep. They are a **content decision, not a migration one** — read
 them and decide whether they are worth finishing. The book page in particular
 looks like it wants to exist.
 
-- [ ] **`load`** — phase 3b proper. Not written yet: it needs the four database
-      ids (now known) and a `NOTION_TOKEN` with access to them. Two rules it
-      must keep: everything lands as `Status = Idea`, and images are *uploaded*
-      to Notion, never linked.
+**`load` is written and dry-run clean.** It is waiting on one thing: a
+`NOTION_TOKEN`.
+
+```
+posts     25 pages
+talks     29 pages
+training  15 pages
+          2,225 blocks total
+```
+
+- [x] `load` — markdown → Notion blocks, properties from the front matter,
+      re-runnable (it reads existing slugs first and skips them, so a run that
+      dies half way is fixed by running it again rather than by deleting rows)
+- [ ] **Create the integration and run it** — see below
+
+Everything lands as **`Status = Idea`**. Nothing publishes itself; that is what
+3c is for.
+
+The six standalone pages are deliberately *not* loaded. Home, consultancy and
+contact become hand-authored `.astro`: a page with one-off layout is code, and
+putting it in Notion gives an editor a body they cannot safely change.
+
+### Getting the token
+
+Two minutes, and not throwaway work — the CI sync in phase 4 needs the same
+token.
+
+1. **notion.so/my-integrations** → New internal integration, workspace = yours.
+2. Copy the secret into `local.env` as `NOTION_TOKEN=…` (gitignored), and into
+   the repository secret of the same name.
+3. **Share each of the four databases with it**: open the database → `•••` →
+   Connections → add the integration. Notion grants access per page, so
+   creating the integration is not enough on its own — miss this and the sync
+   sees an empty workspace and reports success.
+
+Then:
+
+```bash
+npx tsx scripts/import-wordpress.ts load --dry-run   # says what it would do
+npx tsx scripts/import-wordpress.ts load             # ~2 minutes, rate-limited
+```
 
 ### 3c. Your pass through it
 
@@ -370,12 +407,12 @@ something:
    else in the repository is ready for a deploy; nothing can prove itself
    against a real host until these exist.
 
-**Before phase 3b (the load into Notion)**
+**Now — it is the only thing stopping the content reaching Notion**
 
-2. **A `NOTION_TOKEN`** for an integration, and **share the four databases with
-   it**. Creating the integration is not enough on its own — Notion grants
-   access per page, so each database needs the connection added explicitly, or
-   the sync sees an empty workspace and reports success.
+2. **A `NOTION_TOKEN`**, and **share the four databases with it**. Step-by-step
+   under phase 3b. The importer is written and dry-run clean; 69 pages are
+   waiting on this one credential. The same token is what the CI sync uses in
+   phase 4, so it is not throwaway.
 
 **Before phase 2 finishes, whenever they turn up**
 
