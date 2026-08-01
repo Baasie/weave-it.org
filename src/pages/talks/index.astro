@@ -1,0 +1,166 @@
+---
+/**
+ * Talks, band for band with the live page.
+ *
+ * Upcoming talks are featured at the top and the rest form the archive below.
+ * The split is derived from the date at build time and from nothing stored —
+ * see `talks()` in src/lib/collections.ts. That means the page is only as
+ * current as the last build, which is why `watch.yml` runs weekly: a talk that
+ * has passed sits in the wrong list until something rebuilds, and a weekly
+ * rebuild bounds how long that can be.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { media } from '../../lib/media.ts';
+import PageHeader from '../../components/PageHeader.astro';
+import BookMeBand from '../../components/BookMeBand.astro';
+import ContactBand from '../../components/ContactBand.astro';
+import EntryCard from '../../components/EntryCard.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import { talks, tagOptions, isDraft } from '../../lib/collections.ts';
+import { collectionPage } from '../../lib/seo.ts';
+import { excerpt, formatDate } from '../../lib/format.ts';
+
+const { upcoming, past, all } = await talks();
+const tags = tagOptions(all);
+
+const title = 'Talks & hands-on';
+const description =
+  'Conference talks and hands-on workshops on collaborative modelling, Domain-Driven ' +
+  'Design and architecture decision-making — where to catch one, and where to watch one.';
+
+const meta = (t: (typeof all)[number]) =>
+  [t.data.date ? formatDate(t.data.date) : null, t.data.event, t.data.location]
+    .filter(Boolean)
+    .join(' · ');
+
+const jsonLd = [
+  collectionPage({
+    path: '/talks/',
+    name: title,
+    description,
+    items: all.map((e) => ({ title: e.data.title, path: `/talks/${e.id}/` })),
+  }),
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <PageHeader title="Talks & hands-on" />
+
+  <BookMeBand
+    cta="Book me for a talk"
+    image={media.speaking}
+    wordmark="WeaveIT Talks"
+    wordmarkTone="accent"
+  >
+    <p>
+      I am a regular speaker at international conferences, in person and online, and I also
+      run short hands-on workshops — two to three hours — for organisations and conferences.
+    </p>
+  </BookMeBand>
+
+  <section class="band band--teal" data-test="what-i-offer">
+    <div class="wrap offers duo">
+      <section>
+        <h2 class="band-heading">Talks</h2>
+        <p>
+          I am an expert in a range of cutting-edge topics and have had the privilege of
+          delivering interactive presentations at international conferences, both in person
+          and online.
+        </p>
+        <p>
+          My areas of expertise include collaborative software design, Domain-Driven Design,
+          Deep Democracy, sociotechnical system design, software design, technical leadership
+          and software architecture.
+        </p>
+        <p>
+          My presentations are not just about imparting knowledge; they are about fostering
+          collaboration, sparking innovation, and challenging participants to think
+          differently.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="band-heading">Hands-on workshops</h2>
+        <p>
+          I deliver both standard and bespoke hands-on workshops at public and internal
+          company conferences. They are immersive experiences that go deep into subjects like
+          collaborative software design, Domain-Driven Design, Deep Democracy and
+          sociotechnical system design.
+        </p>
+        <p>
+          Participants get to engage in real-world scenarios, collaborate on solutions and
+          apply the techniques firsthand.
+        </p>
+        <p>
+          Whether you want a structured approach to a specific topic or something customised
+          to a challenge of your own, the sessions are designed to send people away with
+          skills they can use immediately.
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <section class="band band--sage" data-test="talks-archive">
+    <div class="wrap">
+      {
+        upcoming.length > 0 && (
+          <div data-test="upcoming">
+            <h2 class="display">Coming up</h2>
+            <ul class="grid-cards feature-grid">
+              {upcoming.map((entry) => (
+                <EntryCard
+                  href={`/talks/${entry.id}/`}
+                  title={entry.data.title}
+                  meta={meta(entry)}
+                  excerpt={excerpt(entry.body, entry.data.seoDescription)}
+                  variant="feature"
+                />
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      <h2 class="display">Recent talks &amp; hands-on</h2>
+      <TagFilter tags={tags} allLabel="All talks" noun="talks" />
+
+      {
+        past.length === 0 ? (
+          <p class="empty" data-test="empty">Nothing published here yet.</p>
+        ) : (
+          <ul class="grid-cards grid-cards--3 js-entry-list" data-test="entry-list">
+            {past.map((entry) => (
+              <EntryCard
+                href={`/talks/${entry.id}/`}
+                title={entry.data.title}
+                meta={meta(entry)}
+                excerpt={excerpt(entry.body, entry.data.seoDescription)}
+                tags={entry.data.tags}
+                badge={isDraft(entry) ? entry.data.status : undefined}
+                badgeKind="draft"
+                tagBase="/talks/"
+                variant="outline"
+              />
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+
+    /* The two featured cards run at half width even on a wide screen, so an
+       upcoming talk gets the room a card in the archive below does not. */
+    .feature-grid {
+      margin-bottom: var(--space-16);
+    }
+    @media (min-width: 900px) {
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</BaseLayout>

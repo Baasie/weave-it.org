@@ -1,0 +1,118 @@
+---
+/**
+ * A training course. `/training/<slug>/` — the same address WordPress served.
+ *
+ * The one page type with a commercial job to do, which is why the outcomes and
+ * the facts are rendered as structure rather than left inside the prose: a
+ * `Course` node is what search actually surfaces for this. It is also the only
+ * detail page that carries the contact band, following the live site — a reader
+ * at the end of a course page is much closer to booking than one at the end of
+ * a blog post.
+ */
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import ContactBand from '../../components/ContactBand.astro';
+import PrevNext from '../../components/PrevNext.astro';
+import { training, isDraft, neighbours } from '../../lib/collections.ts';
+import { trainingJsonLd } from '../../lib/seo.ts';
+import { excerpt } from '../../lib/format.ts';
+
+export const getStaticPaths = (async () => {
+  const all = await training();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry, all } }));
+}) satisfies GetStaticPaths;
+
+const { entry, all } = Astro.props;
+const { Content } = await render(entry);
+const { title, duration, format, audience, outcomes, seoDescription, featuredImage } = entry.data;
+
+const description = excerpt(entry.body, seoDescription, 160);
+const path = `/training/${entry.id}/`;
+const { prev, next } = neighbours(all, entry.id);
+
+// `format` is a Notion multi-select, so it can hold more than one. The
+// structured data wants exactly one course mode, and "blended" is the honest
+// answer when a course is offered both ways rather than picking one at random.
+const modes = format.map((f) => f.toLowerCase());
+const mode = modes.length > 1 ? 'blended' : (modes[0] as 'onsite' | 'online' | 'blended' | undefined);
+
+const jsonLd = [
+  trainingJsonLd({
+    path,
+    title,
+    description,
+    duration,
+    mode: mode === 'onsite' || mode === 'online' || mode === 'blended' ? mode : undefined,
+  }),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  noindex={isDraft(entry)}
+  markdown={`${path}index.md`}
+>
+  <EntryHero
+    kind="Training"
+    title={title}
+    facts={[duration, format.join(' / ') || null, audience].filter(Boolean) as string[]}
+    cover={featuredImage}
+    draft={isDraft(entry) ? entry.data.status : undefined}
+  />
+
+  {
+    outcomes.length > 0 && (
+      <section class="band band--teal" data-test="outcomes">
+        <div class="wrap">
+          <h2 class="display display--on-colour">What you will learn</h2>
+          <ul class="outcomes">
+            {outcomes.map((o) => (
+              <li>{o}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="band band--sage entry-body" data-pagefind-body>
+    <div class="wrap">
+      <p class="course-cta">
+        <a class="btn" href="/contact/">Ask about this course</a>
+        <a class="btn btn--ghost" href="/training/#workshops">All workshops</a>
+      </p>
+
+      <article class="prose-body" data-test="body">
+        <Content />
+      </article>
+
+      <PrevNext
+        label="Workshop"
+        prev={prev && { href: `/training/${prev.id}/`, title: prev.data.title }}
+        next={next && { href: `/training/${next.id}/`, title: next.data.title }}
+      />
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+    .outcomes {
+      display: grid;
+      gap: var(--space-4);
+      max-width: var(--content-width);
+      margin: 0;
+      padding-left: var(--space-6);
+    }
+    .course-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-bottom: var(--space-10);
+    }
+  </style>
+</BaseLayout>

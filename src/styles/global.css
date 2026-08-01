@@ -29,36 +29,77 @@ body {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--text-base);
-  line-height: 1.65;
+  line-height: var(--leading-body);
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
 }
 
+/* Headings, and the one distinction that matters -------------------------
+ *
+ * **Share is for display; Poppins is for subheadings inside prose.** That is
+ * not a preference, it is what the live site does, and the two are far enough
+ * apart that using Share for an in-article `h2` makes a blog post look like a
+ * poster. Measured: an article `h1` is Share 44px/500 in near-black, and an
+ * article `h2` is *Poppins* 26px/500 in teal.
+ *
+ * The huge Share headings — 60px and 72px — belong to the full-bleed bands on
+ * the home page and the section indexes. They are `.display` below, applied
+ * deliberately, rather than something every `h2` inherits and most have to
+ * override back down.
+ */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-heading);
-  color: var(--color-primary);
-  line-height: 1.15;
-  font-weight: 700;
   margin: 0 0 var(--space-4);
+  line-height: 1.3;
+  font-weight: 500;
+  /* `--color-primary-ink`, not `--color-primary`. The brand teal is 3.07:1 on
+     the sage ground — enough for the huge `.display` headings, which qualify as
+     large text, and not enough for a 21px subheading inside an article. The
+     darker teal is 4.55:1 and is the same colour family. */
+  color: var(--color-primary-ink);
   /* Titles come from Notion, so no width is ever safe to assume: a compound
      word long enough to beat the narrowest phone would otherwise push the whole
      page sideways. Only ever breaks a word that cannot fit. */
   overflow-wrap: break-word;
 }
+
 h1 {
-  font-size: var(--text-4xl);
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  line-height: 1.2;
+  color: var(--color-heading);
 }
 h2 {
-  font-size: var(--text-2xl);
-  margin-top: var(--space-12);
+  font-size: var(--text-xl);
+  margin-top: var(--space-10);
 }
 h3 {
-  font-size: var(--text-xl);
+  font-size: 1.3rem;
   margin-top: var(--space-8);
+}
+h4 {
+  font-size: var(--text-lg);
+}
+
+/* A band heading: Share, light, teal, and very large. The brand's loudest
+   voice, so it is opt-in — see the note above. */
+.display {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-h2);
+  line-height: 1.1;
+  color: var(--color-primary);
+}
+.display--hero {
+  font-size: var(--text-5xl);
+  font-weight: var(--weight-h1);
+}
+/* On the teal, brown and green bands the heading is white, not teal. */
+.display--on-colour {
+  color: var(--on-colour);
 }
 
 p {

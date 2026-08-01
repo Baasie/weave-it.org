@@ -1,0 +1,104 @@
+---
+/**
+ * A learning journey. `/learning-journeys/<slug>/`.
+ *
+ * The steps are the page body; the relations are the material the journey
+ * routes into. `HowTo` rather than `Course` in the structured data, because a
+ * journey is a route through mostly-free material and typing it as a course
+ * would claim we are selling the reading list — see src/lib/seo.ts.
+ */
+import type { GetStaticPaths } from 'astro';
+import { getCollection, getEntry, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import { isVisible, isDraft } from '../../lib/collections.ts';
+import { journeyJsonLd } from '../../lib/seo.ts';
+import { excerpt } from '../../lib/format.ts';
+
+export const getStaticPaths = (async () => {
+  const entries = (await getCollection('learningJourneys')).filter(isVisible);
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, startingPoint, outcome, seoDescription, featuredImage } = entry.data;
+
+const description = excerpt(entry.body, summary ?? seoDescription, 160);
+const path = `/learning-journeys/${entry.id}/`;
+
+/** Resolve a relation to the thing it points at, so the page can link to it. */
+const resolve = async <C extends 'training' | 'talks' | 'posts'>(
+  collection: C,
+  refs: { id: string }[],
+  base: string,
+) => {
+  const found = await Promise.all(refs.map((r) => getEntry(collection, r.id)));
+  return found
+    .filter((e): e is NonNullable<typeof e> => Boolean(e) && isVisible(e!))
+    .map((e) => ({ title: e.data.title, href: `${base}${e.id}/` }));
+};
+
+const [courses, talks, posts] = await Promise.all([
+  resolve('training', entry.data.training, '/training/'),
+  resolve('talks', entry.data.talks, '/talks/'),
+  resolve('posts', entry.data.posts, '/blog/'),
+]);
+
+const jsonLd = [journeyJsonLd({ path, title, description })];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  noindex={isDraft(entry)}
+  markdown={`${path}index.md`}
+>
+  <EntryHero
+    kind="Learning journey"
+    title={title}
+    facts={[startingPoint, outcome].filter(Boolean) as string[]}
+    cover={featuredImage}
+    draft={isDraft(entry) ? entry.data.status : undefined}
+  />
+
+  {/* Pagefind indexes the whole `<body>` unless something claims a narrower
+      region, which would put the nav and the footer of every page into every
+      search result. This is that claim. */}
+  <section class="band band--sage entry-body" data-pagefind-body>
+    <div class="wrap">
+      {summary && <p class="lead">{summary}</p>}
+
+    <div class="prose-body" data-test="body">
+      <Content />
+    </div>
+
+    {
+      (courses.length > 0 || talks.length > 0 || posts.length > 0) && (
+        <section class="entry-foot prose" data-test="journey-links">
+          <h2>Along the way</h2>
+          {courses.length > 0 && (
+            <>
+              <h3>Workshops</h3>
+              <ul>{courses.map((c) => <li><a href={c.href}>{c.title}</a></li>)}</ul>
+            </>
+          )}
+          {talks.length > 0 && (
+            <>
+              <h3>Talks</h3>
+              <ul>{talks.map((c) => <li><a href={c.href}>{c.title}</a></li>)}</ul>
+            </>
+          )}
+          {posts.length > 0 && (
+            <>
+              <h3>Reading</h3>
+              <ul>{posts.map((c) => <li><a href={c.href}>{c.title}</a></li>)}</ul>
+            </>
+          )}
+        </section>
+      )
+    }
+    </div>
+  </section>
+</BaseLayout>

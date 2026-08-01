@@ -1,0 +1,109 @@
+---
+/**
+ * A talk. `/talks/<slug>/` — the same address WordPress served.
+ *
+ * Upcoming versus past is computed here from the date, and nowhere is it
+ * stored. See `talks()` in src/lib/collections.ts for why.
+ */
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import AuthorCard from '../../components/AuthorCard.astro';
+import PrevNext from '../../components/PrevNext.astro';
+import { talks, isDraft, neighbours } from '../../lib/collections.ts';
+import { talkJsonLd } from '../../lib/seo.ts';
+import { excerpt, formatDate, isoDate } from '../../lib/format.ts';
+
+export const getStaticPaths = (async () => {
+  const { all } = await talks();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry, all } }));
+}) satisfies GetStaticPaths;
+
+const { entry, all } = Astro.props;
+const { Content } = await render(entry);
+const { title, date, event, location, videoUrl, slidesUrl, tags, seoDescription, featuredImage } =
+  entry.data;
+
+const description = excerpt(entry.body, seoDescription, 160);
+const path = `/talks/${entry.id}/`;
+const upcoming = date ? new Date(date).setHours(23, 59, 59, 999) >= Date.now() : false;
+const { prev, next } = neighbours(all, entry.id);
+
+const jsonLd = [
+  talkJsonLd({
+    path,
+    title,
+    description,
+    date: date ? isoDate(date) : undefined,
+    event,
+    location,
+    videoUrl,
+  }),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  noindex={isDraft(entry)}
+  markdown={`${path}index.md`}
+>
+  <EntryHero
+    kind={upcoming ? 'Upcoming talk' : 'Talk'}
+    title={title}
+    facts={[date ? formatDate(date) : null, event, location].filter(Boolean) as string[]}
+    cover={featuredImage}
+    draft={isDraft(entry) ? entry.data.status : undefined}
+  />
+
+  <section class="band band--sage entry-body" data-pagefind-body>
+    <div class="wrap">
+      {
+        (videoUrl || slidesUrl) && (
+          <p class="talk-links">
+            {videoUrl && <a class="btn" href={videoUrl} data-test="video">Watch the recording</a>}
+            {slidesUrl && <a class="btn btn--ghost" href={slidesUrl} data-test="slides">See the slides</a>}
+          </p>
+        )
+      }
+
+      <article class="prose-body" data-test="body">
+        <Content />
+      </article>
+
+      {
+        tags.length > 0 && (
+          <div class="entry-tags">
+            <h2 class="visually-hidden">Tags</h2>
+            <ul class="chip-row">
+              {tags.map((t) => (
+                <li>
+                  <a class="chip" href={`/talks/?tag=${encodeURIComponent(t)}`}>{t}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      <AuthorCard />
+
+      <PrevNext
+        label="Talk"
+        prev={prev && { href: `/talks/${prev.id}/`, title: prev.data.title }}
+        next={next && { href: `/talks/${next.id}/`, title: next.data.title }}
+      />
+    </div>
+  </section>
+
+  <style>
+    .talk-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-bottom: var(--space-10);
+    }
+  </style>
+</BaseLayout>

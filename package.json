@@ -25,7 +25,8 @@
     "sync:posts": "tsx scripts/sync-notion.ts content --collection=posts --write",
     "sync:talks": "tsx scripts/sync-notion.ts content --collection=talks --write",
     "sync:training": "tsx scripts/sync-notion.ts content --collection=training --write",
-    "sync:learning-journeys": "tsx scripts/sync-notion.ts content --collection=learning-journeys --write"
+    "sync:learning-journeys": "tsx scripts/sync-notion.ts content --collection=learning-journeys --write",
+    "sync:drafts": "npm run sync:posts -- --drafts && npm run sync:talks -- --drafts && npm run sync:training -- --drafts && npm run sync:learning-journeys -- --drafts"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",

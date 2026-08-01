@@ -1,7 +1,14 @@
 /* Design tokens — matched to the live weave-it.org brand.
  *
- * Light ground, near-black text, teal as the primary and a set of earthy
- * secondaries. Share for headings over Poppins for body.
+ * A **sage ground**, grey body text, teal as the primary and a set of earthy
+ * secondaries, arranged as full-bleed colour bands. Share for display headings
+ * over Poppins for body and for subheadings inside prose.
+ *
+ * Re-measured off the live site on 2026-08-01 after the first build came out
+ * looking nothing like it. Three things were wrong and all three are worth
+ * knowing before touching anything here: the ground is not white, the headings
+ * are light rather than bold, and the display sizes are far larger than a tidy
+ * type scale would suggest. Each is noted where it lives.
  *
  * **This is the inverse of virtualddd.com**, which is the single most useful
  * thing to know when porting a component across: that site is a dark canvas
@@ -23,7 +30,10 @@
      for anywhere it has to carry body copy. */
   --color-primary: #4b7d7d;
   --color-primary-ink: #3a6161; /* teal, darkened; 6.9:1 on white */
-  --color-primary-soft: #d0d5d2; /* the sage the site uses as a quiet panel */
+  /* There is no `--color-primary-soft`. It used to hold `#d0d5d2`, described as
+     "the sage the site uses as a quiet panel" — which was the mistake that made
+     the first build of this site look nothing like it. That sage is not a
+     panel, it is the ground: see `--color-bg`. */
 
   /* The earthy secondaries, measured against white:
    *
@@ -37,16 +47,50 @@
    * be olive uses the darkened twin below. Nothing changes colour family. */
   --color-accent: #b9aa3a; /* olive gold — fills, borders, chips */
   --color-accent-ink: #7a6f1e; /* the same olive, darkened; 5.1:1 on white */
+  /* The olive lifted toward white, for gold-looking *text* on the brown band
+     (4.54:1). The brand olive itself is 2.51:1 there and 1.95:1 on the teal,
+     which is what the live site sets its "MORE INFO ›" links in.
+     **Not usable on the teal even so** — see the note on `--on-colour`. */
+  --color-accent-pale: #e7e2bc;
   --color-moss: #749b62; /* green */
+  /* The green, darkened until it carries text on the sage ground: 4.62:1,
+     against 2.11:1 for the brand green itself. The live site sets its section
+     eyebrows in `--color-moss` directly, which is the second-worst contrast on
+     the site after the olive. Same family, same role, readable. */
+  --color-moss-ink: #48603d;
+  /* The green at half strength over the sage, flattened. The live blog archive
+     sets it as `rgba(116,155,98,0.5)`; a flat value is stated here instead,
+     because an alpha fill contrasts against whatever happens to be behind it
+     and this one has to be measurable. Only ink clears 4.5:1 on it — a teal
+     title, which is what the live cards use, is 2.17:1. */
+  --color-moss-soft: #a3b894;
   --color-bark: #7e5e2c; /* brown */
 
-  /* Neutrals (light theme) --------------------------------------------- */
-  --color-text: #212121;
-  --color-text-muted: #4e4b66;
-  --color-bg: #ffffff;
-  --color-surface: #f4f4f4;
-  --color-surface-2: #ebebeb;
-  --color-border: #d8d8d8;
+  /* Neutrals ------------------------------------------------------------
+   *
+   * **The ground is sage, not white.** This is the thing most likely to be got
+   * wrong by anyone porting a component in, and it was got wrong here first
+   * time round: `#d1d4c6` was recorded as "a quiet panel" when it is in fact
+   * the background of every page on the site — measured on the home page and on
+   * `/blog/`, so it is brand rather than one page's decoration.
+   *
+   * White is the *card* colour. A panel that needs to lift off the page is
+   * `--color-surface`; a section that needs to recede is one of the brand
+   * bands. There is no white background anywhere except inside a card. */
+  --color-text: #595959; /* Divi's body grey. 4.65:1 on sage, 7:1 on a card */
+  /* **There is almost no room for a lighter grey on this ground.** The sage is
+     light, so anything greyer than roughly this fails against it — `#6d6d6d`
+     measures 3.43:1. "Muted" here is therefore a job, not a lighter colour: it
+     is barely dimmer than the body, and de-emphasis is done with size and
+     weight instead. On a white card it has all the room it wants (6.9:1). */
+  --color-text-muted: #5a5a5a;
+  /* An article title is near-black, not teal — measured. Teal is for the
+     display headings on the bands and for subheadings inside prose. */
+  --color-heading: #383838;
+  --color-bg: #d1d4c6; /* sage — the page ground, on every page */
+  --color-surface: #ffffff; /* cards and panels, which sit *on* the sage */
+  --color-surface-2: #c4c8b8; /* a deeper sage, for a well inside the ground */
+  --color-border: #b6bba9; /* sage-compatible; a grey border reads as dirt here */
 
   /* Text on a coloured fill --------------------------------------------
    *
@@ -55,45 +99,71 @@
    * recurring — white on a bright brand fill measured 2.22:1 there, and the
    * failing element was a button.
    *
-   * The same maths applies here and lands the same way. On the olive
-   * `--color-accent`: white is 2.37:1 and fails; `--color-text` is 6.8:1 and
-   * passes. So:
+   * The same maths applies here and lands the same way:
    *
    *   --on-brand   text on a *solid* brand fill (a chip, a button, a panel).
    *                Ink, because these fills are light and saturated.
-   *   --on-colour  text over a *photograph* that already carries a scrim.
-   *                White, because the scrim under it is dark.
+   *   --on-colour  text over a *photograph* that already carries a scrim, or
+   *                on the two bands dark enough to take it. White.
    *
-   * Teal is the exception among the fills — dark enough to take white at
-   * 4.6:1 — but it takes ink too, and one rule that is always right beats two
-   * that need remembering. */
-  --on-brand: var(--color-text);
+   * **The teal band has a ceiling of 4.64:1, and pure white is what reaches
+   * it.** Nothing tinted clears 4.5:1 on that colour — not a pale gold, not an
+   * off-white. So small text on teal is white or it is a defect; there is no
+   * third option, and this is the one place on the site where the palette
+   * genuinely constrains the design rather than merely guiding it.
+   *
+   * Measured on this palette, against the brand fills:
+   *
+   *   white on teal   4.64:1  passes — the teal band keeps white text
+   *   white on brown  5.96:1  passes — the book band keeps white text
+   *   white on green  3.18:1  large text only; body copy on green is ink
+   *   white on olive  2.37:1  fails outright; olive always takes ink
+   *
+   * **`--on-brand` is deliberately not `var(--color-text)`.** Body grey on the
+   * olive is 3.03:1 and fails; ink is 6.80:1 and passes. Pointing this at the
+   * body colour is the one-character change that would quietly break every
+   * chip, button and coloured block on the site. */
+  --on-brand: #212121;
   --on-colour: #fff;
-  --on-colour-muted: rgba(255, 255, 255, 0.9);
 
-  /* Overlays. Only reusable surfaces are tokens: the stops inside one
-     component's own scrim gradient are a shape, not a palette, and naming each
-     would produce tokens nobody could reuse. */
-  --scrim-weak: rgba(0, 0, 0, 0.3);
-  --scrim: rgba(0, 0, 0, 0.55);
-  --scrim-strong: rgba(0, 0, 0, 0.75);
-  --tint-primary: rgba(75, 125, 125, 0.1);
+  /* Overlays. Only reusable surfaces are tokens, and only ones something
+     actually uses: three scrims and a teal tint were carried over from the
+     dark site this pattern came from, sat unreferenced through two builds, and
+     are gone. Add one back when a second component wants it. */
   --tint-accent: rgba(185, 170, 58, 0.12);
 
   /* Typography ---------------------------------------------------------- */
   --font-heading: 'Share', Georgia, serif;
   --font-body: 'Poppins', system-ui, -apple-system, sans-serif;
 
-  /* Type scale (~1.25 major third) */
+  /* Headings are **light**, not bold.
+   *
+   * Measured off the live site: the h1 is weight 500 and the section h2s are
+   * weight 300. Share is a wide, open face and the brand relies on that — set
+   * at 700 it stops looking like this site at all, which is what happened here
+   * first time round. Bold is for body emphasis, not for headings. */
+  --weight-h1: 500;
+  --weight-h2: 300;
+
+  /* Type scale, from the live site rather than from a ratio.
+   *
+   * The jump from `--text-3xl` to the display sizes is enormous — 60px and
+   * 72px against a 16px body — and that gap is the brand doing its work. A
+   * tidier scale would flatten exactly the thing that makes the page look
+   * like itself. Both display sizes are clamped so a long unbroken word in a
+   * Notion title cannot push a 360px phone sideways. */
   --text-sm: 0.8rem;
   --text-base: 1rem;
-  --text-lg: 1.25rem;
+  --text-lg: 1.125rem; /* the eyebrow and the lead: 18px on the live site */
   --text-xl: 1.5rem;
   --text-2xl: 1.95rem;
   --text-3xl: 2.5rem;
-  /* Clamped rather than flat, so one long unbroken word in a title cannot make
-     a 360px phone scroll sideways. Full size from ~600px up. */
-  --text-4xl: clamp(2.2rem, 8.5vw, 3.2rem);
+  --text-4xl: clamp(2.4rem, 6.2vw, 3.75rem); /* section h2 — 60px */
+  --text-5xl: clamp(2.75rem, 7.4vw, 4.5rem); /* page h1 — 72px */
+
+  /* Body line height. 1.8 on the live site, which is loose, and deliberately
+     so: long paragraphs of dense prose at 16px need the air. */
+  --leading-body: 1.8;
 
   /* Spacing ------------------------------------------------------------- */
   --space-1: 0.25rem;
@@ -107,9 +177,13 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* Layout -------------------------------------------------------------- */
+  /* Layout --------------------------------------------------------------
+   *
+   * `--wide-width` is 1080px because that is the live site's content row,
+   * measured. Every band is full-bleed and every band's *content* stops at
+   * this width, which is the rhythm the whole design rests on. */
   --content-width: 46rem;
-  --wide-width: 72rem;
+  --wide-width: 67.5rem; /* 1080px */
   --radius: 4px;
   --radius-sm: 2px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);

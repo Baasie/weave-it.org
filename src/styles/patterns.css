@@ -1,0 +1,640 @@
+/* The shared vocabulary. Built when the second page needed a thing, not before.
+ *
+ * Everything here is used by at least two of the section index and detail
+ * templates. A pattern used by exactly one page belongs in that page's own
+ * `<style>` block, where it can be deleted with the page.
+ *
+ * **The trap, and it is the whole reason this file has a header comment.** The
+ * fills on this palette are light. Text on a solid brand fill is `--on-brand`,
+ * which is ink; `--on-colour` is white and is only for text over a photograph
+ * that already carries a scrim. They are not interchangeable, and getting it
+ * wrong looks fine on a screen while measuring 2.4:1. See tokens.css.
+ */
+
+/* Buttons --------------------------------------------------------------- */
+
+/* The house button: brown, white, uppercase, letter-spaced, and effectively
+   square. Measured off the live site — a 1px radius rather than none, which
+   reads as sharp without being brittle at the corners. Poppins, not Share:
+   Share is for headings only. */
+.btn {
+  display: inline-block;
+  padding: var(--space-4) var(--space-8);
+  border: 2px solid var(--color-bark);
+  border-radius: var(--radius-sm);
+  background: var(--color-bark);
+  color: var(--on-colour); /* 5.96:1 — brown is dark enough for white */
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--on-colour);
+  text-decoration: none;
+}
+
+/* The secondary action beside it is text, not a second box — two filled
+   buttons side by side is two primary actions, which is none. */
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-heading);
+  padding-inline: var(--space-2);
+}
+.btn--ghost:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-bark);
+  text-decoration: underline;
+}
+
+/* On a dark band the brown disappears; the olive is the accent that reads. */
+.band--teal .btn,
+.band--brown .btn,
+.band--green .btn {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--on-brand); /* 6.8:1 — never white on the olive */
+}
+.band--teal .btn:hover,
+.band--brown .btn:hover,
+.band--green .btn:hover {
+  background: var(--color-accent-ink);
+  border-color: var(--color-accent-ink);
+  color: var(--on-colour);
+}
+
+/* Chips ----------------------------------------------------------------- */
+
+/* A chip is a tag, and a tag on this site is lower case — see src/lib/tags.ts,
+   which decides the one spelling of each. The outline treatment is the default
+   because a page carries up to eight of them and eight solid fills is a rash. */
+.chip {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--color-accent);
+  background: var(--tint-accent);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+/* The filter's selected state, and the only place a chip is filled. Ink on the
+   olive, never white: white measures 2.37:1 here and ink measures 6.8:1. */
+.chip[aria-current],
+.chip--on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--on-brand);
+  font-weight: 600;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* A badge says what something *is* — "Upcoming", "Draft". Not a tag, not a
+   link, and deliberately a different shape from a chip so the two do not read
+   as the same control. */
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-moss);
+  color: var(--on-brand);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.badge--draft {
+  background: var(--color-accent);
+}
+
+/* Cards ----------------------------------------------------------------- */
+
+.card {
+  /* `position: relative` is here rather than in a second `.card {}` block
+     further down the file, which is where it used to live: it is what the
+     card-wide click target on `.card__title a::after` is positioned against,
+     and separating the two made it look like a stray rule. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.card:hover {
+  box-shadow: var(--shadow);
+}
+/* On the green band the cards are sage rather than white, which is what the
+   live site does and what keeps the band reading as one block rather than as a
+   row of bright rectangles. */
+.band--green .card {
+  background: var(--color-bg);
+}
+
+/* The archive card: no fill, an olive rule around it. Used where a grid of
+   cards sits on the sage and a white fill would make the page all rectangles —
+   the talks archive on the live site. */
+.card--outline {
+  background: transparent;
+  border: 2px solid var(--color-accent);
+}
+.card--outline:hover {
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+/* The featured card at the top of an archive: a solid olive fill, ink text. */
+.card--feature {
+  background: var(--color-accent);
+}
+
+/* The blog archive card: the green at half strength. */
+.card--soft {
+  background: var(--color-moss-soft);
+}
+
+/* Both filled variants take ink throughout — including the title, which is the
+   one thing that would otherwise stay teal and drop to 2.17:1 on the soft green
+   and 2.89:1 on the olive. A filled card sets *all* of its text, or the parts
+   nobody remembered to set are the parts that fail. */
+.card--feature,
+.card--soft {
+  color: var(--on-brand);
+}
+.card--feature .card__title a,
+.card--soft .card__title a,
+.card--feature .card__meta,
+.card--soft .card__meta,
+.card--feature .card__excerpt,
+.card--soft .card__excerpt {
+  color: var(--on-brand);
+}
+.card__media {
+  aspect-ratio: 16 / 9;
+  background: var(--color-surface-2);
+  overflow: hidden;
+  /* Both lines are load-bearing, and `aspect-ratio` alone does nothing without
+     them. The card is a column flexbox, so this is a flex item, and a flex
+     item's `min-height` defaults to `auto` — it refuses to shrink below its
+     content. A portrait cover therefore stretched the box back to its own
+     shape and the ratio was silently ignored. */
+  flex: 0 0 auto;
+  min-height: 0;
+}
+.card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+.card__title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+/* The whole card is the click target, with the anchor still the accessible
+   name — so the focus ring lands on the title text rather than on a 400px box,
+   and a middle click still opens a link. */
+.card__title a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.card__meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.card__excerpt {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+/* Chips sit above the card-wide click target, or they are unreachable. */
+.card .chip-row {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
+/* Colour tiles ----------------------------------------------------------
+ *
+ * The workshop and talk grids on the live site are solid brand-colour squares
+ * with the title set large across them — no image, no border, no card. The
+ * colour cycles green → teal → olive down the grid, so the *grid* assigns it
+ * with `nth-child` rather than each item carrying a colour it would then have
+ * to keep in step with its position.
+ *
+ * **Each fill takes the text colour it can carry, and they are not the same.**
+ * White on teal is 4.64:1 and fine; white on green is 3.18:1 and white on olive
+ * 2.37:1, and these titles are ~26px regular, which is not "large text" — so
+ * two of the three tiles take ink. The live site sets all three in white.
+ */
+.tile-grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+@media (min-width: 640px) {
+  .tile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .tile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 15rem;
+  padding: var(--space-8);
+  text-align: center;
+}
+.tile__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-h2);
+  line-height: 1.25;
+  color: inherit;
+}
+.tile__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.tile__title a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.tile__title a:hover {
+  text-decoration: underline;
+}
+.tile__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: inherit;
+}
+
+/* Cycled by position. `nth-child(3n+1)` is the first of each row of three, and
+   the pattern degrades sensibly at one and two columns — the sequence stays
+   green, teal, olive whatever the grid is doing. */
+.tile:nth-child(3n + 1) {
+  background: var(--color-moss);
+  color: var(--on-brand); /* 5.07:1; white would be 3.18:1 */
+}
+.tile:nth-child(3n + 2) {
+  background: var(--color-primary);
+  color: var(--on-colour); /* 4.64:1 — the one fill that takes white */
+}
+.tile:nth-child(3n + 3) {
+  background: var(--color-accent);
+  color: var(--on-brand); /* 6.80:1; white would be 2.37:1 */
+}
+.tile:hover {
+  filter: brightness(0.95);
+}
+
+.grid-cards {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+@media (min-width: 640px) {
+  .grid-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .grid-cards--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Bands ------------------------------------------------------------------
+ *
+ * **The design is a stack of full-bleed colour bands**, each with its content
+ * stopped at `--wide-width`. That alternation is the single most recognisable
+ * thing about this site, and it is why almost nothing here needs a border: a
+ * section is separated from its neighbour by being a different colour, not by
+ * a rule between them.
+ *
+ * `.band` is the full-width colour; `.wrap` inside it is the content column.
+ * The modifier says which colour, and each one carries its own text colour
+ * because that is not a free choice — see the contrast table in tokens.css.
+ */
+.band {
+  padding-block: var(--space-16);
+}
+.band--teal {
+  background: var(--color-primary);
+  color: var(--on-colour);
+}
+.band--brown {
+  background: var(--color-bark);
+  color: var(--on-colour);
+}
+/* White on the green is 3.18:1 — fine for a display heading, not for body
+   copy. So the band's *default* text is ink, and the heading opts into white.
+   The live site sets both in white; this keeps the colour and fixes the text. */
+.band--green {
+  background: var(--color-moss);
+  color: var(--on-brand);
+}
+.band--sage {
+  background: var(--color-bg);
+}
+.band--teal a,
+.band--brown a {
+  color: var(--on-colour);
+}
+.band--green a {
+  color: var(--on-brand);
+}
+
+/* The heading *inside* a band, below the `.display` one — "Long-term
+   engagements", "Standardised use case", "Talks".
+ *
+ * One name, because it was four: `.engagements__title`, `.approaches__title`
+ * and `.offers__title` were three identical rules in three page files, each
+ * setting Share, light, white, `margin-top: 0`. The colour is the part that
+ * must not be re-decided per page — gold on the teal is 1.95:1, which is what
+ * the live site uses for all three. */
+.band-heading {
+  margin-top: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-h2);
+  line-height: 1.15;
+}
+.band--teal .band-heading,
+.band--brown .band-heading {
+  color: var(--on-colour);
+}
+.band--green .band-heading,
+.band--sage .band-heading {
+  color: var(--color-primary-ink);
+}
+
+/* Two equal columns from the layout breakpoint, one below it.
+ *
+ * Six pages had written this same eight-line block out longhand. It is the
+ * site's default way of putting two things side by side, so it is a utility —
+ * a layout that needs something *other* than equal halves still writes its own
+ * grid, which is the point at which it has stopped being this pattern. */
+.duo {
+  display: grid;
+  gap: var(--space-10);
+}
+@media (min-width: 800px) {
+  .duo {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-12);
+  }
+}
+
+/* The eyebrow over a band heading: small, uppercase, letter-spaced.
+   `--color-moss-ink` rather than the brand green, which is 2.11:1 here. */
+.eyebrow {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-moss-ink);
+}
+/* Gold on brown works once the olive is lifted; gold on teal never works at
+   this size, so the teal band's eyebrow is white. The live site sets both in
+   the brand olive, at 2.51:1 and 1.95:1. */
+.band--brown .eyebrow {
+  color: var(--color-accent-pale);
+}
+.band--teal .eyebrow {
+  color: var(--on-colour);
+}
+.band--green .eyebrow {
+  color: var(--color-accent-ink);
+}
+
+/* Page furniture -------------------------------------------------------- */
+
+/* The band at the top of an index page. */
+.hero-band {
+  background: var(--color-bg);
+  padding-block: var(--space-12) var(--space-10);
+}
+.hero-band h1 {
+  margin-bottom: var(--space-3);
+}
+.hero-band .lead {
+  max-width: var(--content-width);
+  margin: 0;
+}
+
+/* The lead paragraph: the one sentence under a title that says what this is.
+   A pattern rather than four copies — the home page, the section bands and the
+   journey header all want the identical thing. */
+.lead {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+}
+
+/* The closing block of a detail page — the "along the way" list on a journey.
+ *
+ * Its partner `.entry-head` is gone: every detail page opens with `EntryHero`
+ * now, so the class had no callers left. Deleted rather than kept "in case",
+ * which is how a stylesheet becomes a place things are added to.
+ */
+.entry-foot {
+  max-width: var(--content-width);
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+
+/* The band holding a detail page's article. The content column is narrower
+   than the band, so the prose keeps its measure while the band stays full
+   bleed. Everything after the article — tags, author, prev/next — lines up with
+   it rather than with the band. */
+.entry-body .wrap > * {
+  max-width: var(--content-width);
+}
+.canonical {
+  margin-top: var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.entry-tags {
+  margin-top: var(--space-10);
+}
+
+/* Long-form body --------------------------------------------------------- */
+
+/* Everything inside here came out of Notion, so it must survive any markup a
+   writer can produce — not just the markup today's pages happen to contain. */
+.prose-body {
+  max-width: var(--content-width);
+  /* A bare URL pasted on its own line is one unbreakable word, and several of
+     the imported bodies have one — a YouTube embed link, a SpeakerDeck player.
+     At 360px that pushes the whole page sideways. This is the general defence:
+     the body comes from Notion, so an unbreakable string is always possible and
+     no amount of editing makes it impossible. Only ever breaks what cannot
+     otherwise fit. */
+  overflow-wrap: break-word;
+}
+.prose-body a {
+  /* Stronger than `break-word` for links specifically, because a URL has no
+     break opportunities at all and `break-word` will not split mid-"word". */
+  overflow-wrap: anywhere;
+}
+.prose-body > * + * {
+  margin-top: var(--space-4);
+}
+.prose-body img {
+  border-radius: var(--radius);
+  margin-block: var(--space-8);
+}
+.prose-body figure {
+  margin: var(--space-8) 0;
+}
+.prose-body figcaption {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.prose-body blockquote {
+  margin: var(--space-8) 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-5);
+  border-left: 4px solid var(--color-accent);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  font-style: italic;
+}
+.prose-body blockquote p:last-child {
+  margin-bottom: 0;
+}
+.prose-body ul,
+.prose-body ol {
+  padding-left: var(--space-6);
+}
+.prose-body li + li {
+  margin-top: var(--space-2);
+}
+.prose-body code {
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  font-size: 0.9em;
+}
+/* Code blocks and tables are the two things wide enough to push a phone
+   sideways, so each scrolls inside itself rather than widening the page. */
+.prose-body pre {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow-x: auto;
+}
+.prose-body pre code {
+  padding: 0;
+  background: none;
+}
+.prose-body .table-scroll,
+.prose-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.prose-body table {
+  border-collapse: collapse;
+}
+.prose-body th,
+.prose-body td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+.prose-body hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin-block: var(--space-10);
+}
+/* An embed pasted as a bare URL — a YouTube link on its own line — is carried
+   across by the sync as a link, not an iframe. Nothing here assumes an iframe;
+   if one arrives, it is responsive. */
+.prose-body iframe {
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+}
+
+/* Utilities -------------------------------------------------------------- */
+
+.muted {
+  color: var(--color-text-muted);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* An index with nothing in it yet. Says so, rather than rendering a blank page
+   that reads as a bug. */
+.empty {
+  padding: var(--space-10);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  text-align: center;
+}

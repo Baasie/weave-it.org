@@ -1,0 +1,176 @@
+---
+/**
+ * The training catalogue, band for band with the live page.
+ *
+ * `id="workshops"` on the tile grid is load-bearing: the imported course pages
+ * carry a "back to all workshops" link pointing at `/training/#workshops`,
+ * which the live WordPress site answered. Renaming it breaks fifteen inbound
+ * links from our own pages, and no redirect can fix a fragment — the server
+ * never sees it.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { media } from '../../lib/media.ts';
+import PageHeader from '../../components/PageHeader.astro';
+import BookMeBand from '../../components/BookMeBand.astro';
+import ContactBand from '../../components/ContactBand.astro';
+import { training, journeys, isDraft } from '../../lib/collections.ts';
+import { collectionPage } from '../../lib/seo.ts';
+import { excerpt } from '../../lib/format.ts';
+
+const entries = await training();
+const allJourneys = await journeys();
+
+const title = 'Training';
+const description =
+  'Hands-on workshops in collaborative modelling, Domain-Driven Design, EventStorming ' +
+  'and architecture decision-making — for teams, architects and product people.';
+
+const jsonLd = [
+  collectionPage({
+    path: '/training/',
+    name: title,
+    description,
+    items: entries.map((e) => ({ title: e.data.title, path: `/training/${e.id}/` })),
+  }),
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <PageHeader title="Training" />
+
+  <BookMeBand
+    cta="Book me for a training"
+    image={media.training}
+    wordmark="WeaveIT Training"
+    wordmarkTone="accent"
+  >
+    <p>
+      If you are looking to deepen your expertise in collaborative software design,
+      Domain-Driven Design, software architecture, Team Topologies or technical leadership —
+      or to lift the skills of your technical leaders, architects or software teams — I can
+      help. I offer tailored training, from half-day <strong>workshops</strong> to
+      multi-month <strong>learning journeys</strong>, in person or online, and fully
+      adaptable to what you actually need.
+    </p>
+  </BookMeBand>
+
+  <section class="band band--teal" data-test="how-i-teach">
+    <div class="wrap">
+      <h2 class="display display--on-colour">How I teach</h2>
+      <p class="teach-lead">
+        My sessions are rooted in the “Training from the Back of the Room” and “Deep
+        Democracy” methodologies, so they are immersive and hands-on: roughly 80% of the
+        content is practical, and participants are actively engaged throughout.
+      </p>
+      <p class="teach-lead">You can pick either of two approaches:</p>
+
+      <div class="approaches duo">
+        <section>
+          <h3 class="band-heading">Standardised use case</h3>
+          <p>
+            I provide a general scenario that covers the whole of the training content. That
+            ensures a comprehensive understanding, but participants will need to adapt and
+            apply the knowledge to their own context after the training.
+          </p>
+        </section>
+        <section>
+          <h3 class="band-heading">Provide your own use case</h3>
+          <p>
+            We dig into a specific scenario or challenge from your own domain. That makes
+            everything immediately applicable, though it might not cover the full breadth of
+            the material — and participants can apply what they learn right away.
+          </p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  {/* A full-bleed photograph between two bands, as on the live page. Decorative
+      — it illustrates the band above it rather than adding anything. */}
+  <img
+    class="band-image"
+    src={media.workshopRoom}
+    alt=""
+    loading="lazy"
+  />
+
+  <section class="band band--sage" data-test="workshops-band">
+    <div class="wrap">
+      <h2 class="display" id="workshops">My workshops</h2>
+      {
+        entries.length === 0 ? (
+          <p class="empty" data-test="empty">Nothing published here yet.</p>
+        ) : (
+          <ul class="tile-grid" data-test="entry-list">
+            {entries.map((entry) => (
+              <li class="tile js-entry" data-test="entry">
+                <h3 class="tile__title">
+                  <a href={`/training/${entry.id}/`}>{entry.data.title}</a>
+                </h3>
+                {entry.data.duration && <p class="tile__meta">{entry.data.duration}</p>}
+                {isDraft(entry) && <p class="tile__meta" data-test="draft">{entry.data.status}</p>}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="band band--green" data-test="journeys-band">
+    <div class="wrap">
+      <h2 class="display display--on-colour">Learning journeys</h2>
+      <p class="journeys-lead">
+        A journey strings several workshops together over months rather than days, so a team
+        can build the habit rather than just meet the technique.
+      </p>
+      {
+        allJourneys.length === 0 ? (
+          <p class="empty">
+            The first journeys are being written. In the meantime, every workshop above can
+            be combined into one — <a href="/contact/">ask me</a>.
+          </p>
+        ) : (
+          <ul class="grid-cards grid-cards--3">
+            {allJourneys.map((j) => (
+              <li class="card">
+                <div class="card__body">
+                  <h3 class="card__title">
+                    <a href={`/learning-journeys/${j.id}/`}>{j.data.title}</a>
+                  </h3>
+                  <p class="card__excerpt">
+                    {excerpt(j.body, j.data.summary ?? j.data.seoDescription, 160)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+    .teach-lead {
+      max-width: var(--content-width);
+    }
+
+    /* Full-bleed, and a fixed slice of it rather than the whole frame: the
+       source is 4:3 and at full width that is 1000px of photograph between two
+       bands of text. */
+    .band-image {
+      display: block;
+      width: 100%;
+      height: clamp(12rem, 28vw, 22rem);
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .journeys-lead {
+      max-width: var(--content-width);
+      margin-bottom: var(--space-10);
+    }
+  </style>
+</BaseLayout>

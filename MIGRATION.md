@@ -11,9 +11,16 @@ template", and knowing which files that means saves guessing.
 
 [v]: https://github.com/Virtual-Domain-driven-design/virtualddd.com
 
-> **Status: phase 1 in progress.** Phases are ordered by dependency, not by
-> importance. Each ends with something demonstrable, so the work can stop at any
-> phase boundary without leaving a half-migrated site.
+> **Status: phase 4 done, phase 5 done, phase 3c is where the work now is.**
+> Phases are ordered by dependency, not by importance. Each ends with something
+> demonstrable, so the work can stop at any phase boundary without leaving a
+> half-migrated site.
+>
+> The site builds and runs. 69 pages come out of Notion, all four sections have
+> routes, and **`check:urls` reports zero problems** against all 244 inherited
+> addresses. What is left is not code: every page is still `Status = Idea`, so a
+> *production* build emits 10 pages and a *staging* build emits 79. Phase 3c —
+> your editorial pass — is the thing standing between those two numbers.
 
 ---
 
@@ -164,21 +171,57 @@ first deploy creates the release and swaps the symlink on its own.
 
 ## Phase 2 — brand
 
-The one part with no equivalent in the source repository, because it is the part
-that is entirely different. virtualddd.com is a near-black canvas with two
-neons; Weave IT is a light ground with teal headings and earthy secondaries.
+**Done.** The one part with no equivalent in the source repository, because it
+is the part that is entirely different. virtualddd.com is a near-black canvas
+with two neons; Weave IT is a **sage ground** with teal display headings, earthy
+secondaries, and a stack of full-bleed colour bands.
 
 - [x] Tokens extracted, with the olive contrast defect fixed (see phase 0)
-- [ ] Logo and favicons into `public/`. The live site has `logo_weaveit_fc.png`,
-      a white variant, and a favicon at four sizes — all under
-      `wp-content/uploads/2023/10/`, so they survive in the parked WordPress
-      directory. **Prefer an SVG if the Art of Design source has one**; the
-      PNG is 300×224 and will not scale
-- [ ] `src/styles/patterns.css`: the shared vocabulary — `.btn`, `.chip`,
-      `.card`, `.grid-cards`, `.hero-band`, `.prose-body`. Build it when the
-      *second* page needs a thing, not in advance
-- [ ] **A contrast test over every brand fill, before the components multiply**
-- [ ] The three section index pages, then the detail templates
+- [x] Tokens **re-measured against the live site** after the first build came
+      out looking nothing like it — see below
+- [x] Logo into `public/logo-weaveit.png` and `logo-weaveit-white.png`.
+      **An SVG from the Art of Design source would still be better**; these are
+      400×298 and will not scale up
+- [x] `src/styles/patterns.css`: the shared vocabulary
+- [x] **A contrast test over every brand fill** — `tests/unit/contrast.test.mjs`
+- [x] Every page migrated against its live original, band for band
+
+### What the first attempt got wrong, and how
+
+Worth recording, because none of it was visible from the CSS and all of it was
+obvious the moment the two pages were put side by side.
+
+| | Wrong | Actually |
+|---|---|---|
+| The ground | white | **sage `#d1d4c6`** — on every page, not just the home page |
+| Heading weight | 700 | **500** for `h1`, **300** for section headings |
+| Heading face | Share everywhere | Share for *display*; **Poppins** for subheadings inside prose |
+| Display size | 31px | **60px** for a band heading, **72px** for a page title |
+| Content width | 72rem | **67.5rem** (1080px) |
+
+The root error is the first one, and it is recorded in `tokens.css`: `#d1d4c6`
+was stored as `--color-primary-soft`, "the sage the site uses as a quiet panel".
+It is not a panel. White is the *card* colour on this site and the sage is the
+page. Everything else followed from having that inverted.
+
+### The live site's contrast defects, and what was done about them
+
+Decision 0.2 says these are fixed rather than reproduced. Measured:
+
+| Where | Live | Now |
+|---|---|---|
+| "Book me for a training", white on sage | **1.40:1** | teal ink, 4.55:1 |
+| Green eyebrow on sage | 2.11:1 | `--color-moss-ink`, 4.62:1 |
+| Blog card title, teal on soft green | 2.17:1 | ink, 5.49:1 |
+| White on the olive block | 2.37:1 | ink, 6.80:1 |
+| Gold "MORE INFO ›" on teal | 1.95:1 | white, 4.64:1 |
+| Workshop tiles, white on green/olive | 3.18 / 2.37:1 | ink, 5.07 / 6.80:1 |
+| Brown "AREA" label on green | 1.87:1 | ink, 5.07:1 |
+
+No colour changed family; only the ink on top of it did. **The teal band turned
+out to have a hard ceiling of 4.64:1 against pure white**, which means nothing
+tinted can ever pass on it — that is now stated in `tokens.css`, because it
+constrains the design rather than merely guiding it.
 
 **The trap, stated once.** Fills on this palette are light, so text on them must
 be ink and not white. `--on-brand` and `--on-colour` in `tokens.css` are two
@@ -337,28 +380,99 @@ whether the new site reads better than the old one or merely differently.
 
 ## Phase 4 — the sync, the collections, the routes
 
-- [ ] `src/content.config.ts` — a Zod schema per collection mirroring the Notion
+**Done.**
+
+- [x] `src/content.config.ts` — a Zod schema per collection mirroring the Notion
       properties
-- [ ] `scripts/sync-notion.ts` — ported from virtualddd.com. Incremental against
+- [x] `scripts/sync-notion.ts` — ported from virtualddd.com. Incremental against
       `data/sync-state.json`, downloads images into `_assets/`, records a slug
       change as a 301 in `data/retired-urls.csv`, writes `data/sync-alerts.json`
       for what only a person can decide
-- [ ] Routes: `index.astro` and `[slug].astro` for each of the four sections
-- [ ] `[slug]/index.md.ts` — the markdown twin of every content page
-- [ ] `rss.xml.ts`, `llms.txt.ts`, `llms-full.txt.ts`
-- [ ] `/search/` via Pagefind, which indexes the built HTML
+- [x] Routes: `index.astro` and `[slug].astro` for each of the four sections
+- [x] `[slug]/index.md.ts` — the markdown twin of every content page
+- [x] `rss.xml.ts`, `llms.txt.ts`, `llms-full.txt.ts`
+- [x] `/search/` via Pagefind, which indexes the built HTML
+- [x] `src/styles/patterns.css` and the three shared components (phase 2's
+      shared vocabulary, built when the second page needed each thing)
+- [x] `/consultancy/` and `/contact/`, hand-authored, copy carried across from
+      the WordPress export
 
-`sync-notion.ts` is ~1,600 lines and is the largest single port. It is
-genuinely generic apart from its `CONTENT_SPECS` table, which is the per-site
-part — see [docs/template.md](docs/template.md).
+`sync-notion.ts` is genuinely generic apart from its `CONTENT_SPECS` table,
+which is the per-site part — see [docs/template.md](docs/template.md).
+
+### Staging serves drafts, and how that is kept safe
+
+Everything in Notion is `Status = Idea`, so a production build would show
+nothing. Rather than publish 69 pages unreviewed, **a staging build shows
+drafts and a production build cannot**:
+
+```
+npm run build                                     # production: 10 pages
+SITE_URL=https://staging.weave-it.org npm run build   # staging: 79 pages
+```
+
+The switch is `site.isStaging`, and the thing worth understanding is that it is
+**defined by what it is not**: any build whose origin is not `PRODUCTION_URL`.
+There is no `STAGING=true` to set, because a variable somebody can set is a
+variable somebody can set in the wrong workflow. The failure mode of a mistake
+is "staging looks like production", never "the drafts shipped".
+
+Three things follow from it, and all three are wired:
+
+| | Production | Staging |
+|---|---|---|
+| Drafts | Hidden | Shown, and badged with their status |
+| `robots.txt` | Allows everyone, names the AI crawlers | `Disallow: /` |
+| Every page | Indexable | `noindex`, plus a banner saying what this is |
+
+The `robots.txt` had to stop being a static file in `public/` for this, because
+a staging site carrying production's `Allow: /` is a crawlable duplicate of
+weave-it.org full of unpublished work. `noindex` is belt *and* braces on
+purpose: `robots.txt` asks a crawler not to fetch a URL and says nothing about
+whether a URL it already knows may be listed.
+
+### Two conversion defects, found by looking at the pages
+
+Same lesson as the import (3b): **read a sample, not the exit code.**
+
+- **HTML entities survived the WordPress import.** `&amp;`, `&#215;` and
+  `&#8211;` reached Notion as literal text, and Notion faithfully kept them —
+  so a talk was titled "Domain Driven Design &amp; Data Mesh" on the page.
+  Decoded in the sync now, in the same spirit and for the same reasons as tag
+  spelling: one rule, one place, testable, and it applies to an entity pasted in
+  tomorrow. Skipped inside inline code, where an entity may be the point.
+  **The Notion pages still contain them** — the site is right, the source is not
+  yet. Fixing five titles by hand is a five-minute job worth doing.
+- **`aria-pressed` on the tag filter's chips.** They are links, because each
+  filter is a real URL and that is what the 57 redirected tag archives land on —
+  and `aria-pressed` is only valid on a button. axe-core called it critical, and
+  it was right: a screen reader was told about a toggle that did not exist. It
+  is `aria-current="page"` now.
+
+axe-core over one page of each shape is at **0 violations**, and there is no
+horizontal overflow at 390px.
 
 ---
 
 ## Phase 5 — take the URL contract to zero
 
-The scoreboard: `npm run build && npm run check:urls`.
+The scoreboard: `SITE_URL=https://staging.weave-it.org npm run build && npm run
+check:urls`. **It reads zero.**
 
-- [ ] Every one of the 244 addresses served, redirected once, or `410 Gone`
+```
+checked 244 indexed URLs against 113 rules
+  served by a page : 75
+  redirected (301) : 168
+  gone (410)       : 1
+all indexed URLs are handled.
+```
+
+It counted down 143 → 72 → 2 → 0: the routes existing took most of it, the two
+hand-authored pages took the rest. **Note which build it is measured against** —
+a production build has no content pages yet, so the scoreboard reads 72 there,
+and that is the drafts, not a regression.
+
+- [x] Every one of the 244 addresses served, redirected once, or `410 Gone`
 - [ ] Decision 0.4 applied: anything retired gets a `GONE_PAGES` line, never
       silence
 - [ ] `data/live-urls.txt` topped up from **Google Search Console** and the
@@ -373,7 +487,13 @@ The scoreboard: `npm run build && npm run check:urls`.
 
 Ported in shape, not verbatim: they assert things about *this* site.
 
-- [ ] `tests/unit/` — pure rules, no build, under a second
+- [x] `tests/unit/` — **38 tests, 0.2s, no build.** Contrast over the whole
+      palette, the entry-ordering rules, excerpt and date formatting, entity
+      decoding and tag spelling. `contrast.test.mjs` asserts *relationships*
+      between tokens and never a particular hex, so the brand can still be
+      adjusted — what it forbids is an adjustment that makes something
+      unreadable
+- [ ] `tests/unit/` — the rest of the pure rules
 - [ ] `tests/build.test.mjs` — canonicals, one `<h1>`, OG tags, JSON-LD shapes,
       breadcrumbs, internal links, the sitemap, the error pages, a size ceiling
 - [ ] `tests/urls.test.mjs` — replays `.htaccess` against the inventory
@@ -421,18 +541,26 @@ this phase is a copy rather than an archaeology.
 Most of the original list is now answered. What is left, in the order it blocks
 something:
 
-**Now — it is the only thing stopping phase 1 finishing**
+**Now — it is the only thing left between here and a staging site**
 
-1. **Fill in the six deploy secrets.** The table is under phase 1. Everything
-   else in the repository is ready for a deploy; nothing can prove itself
-   against a real host until these exist.
+1. **Fill in the six deploy secrets.** The table is under phase 1, and
+   `SITE_URL` is the one that matters most: it is what makes a build a *staging*
+   build, and therefore what makes the 69 drafts visible and the site
+   uncrawlable. Set it to `https://staging.weave-it.org`. Everything else is
+   ready; nothing can prove itself against a real host until these exist.
 
-**Now — it is the only thing stopping the content reaching Notion**
+**Now — it is what decides whether the new site reads better than the old one**
 
-2. **A `NOTION_TOKEN`**, and **share the four databases with it**. Step-by-step
-   under phase 3b. The importer is written and dry-run clean; 69 pages are
-   waiting on this one credential. The same token is what the CI sync uses in
-   phase 4, so it is not throwaway.
+2. **Phase 3c: your pass through the 69 pages.** This is the only thing
+   standing between a 10-page production build and a 79-page one. Nothing is
+   blocked on it — staging shows every page as a draft, so you can read them in
+   their real layout first and flip `Status` as you go.
+
+   The 15 training pages want the most work: they still carry Divi leftovers
+   (absolute `https://weave-it.org/` links, stray `<< Back to all workshops`
+   lines, long strips of body images), and several have no `SEO Description`, so
+   their cards on `/training/` currently show no summary at all. The 25 posts
+   and 29 talks came across clean.
 
 **Before phase 2 finishes, whenever they turn up**
 
@@ -450,6 +578,13 @@ something:
 5. **Decision 0.3** — the content licence.
 6. **Decision 0.4** — which of the eight pre-2019 posts are worth carrying.
 7. **The two drafts** in the export (phase 3b) — worth finishing, or let go?
+8. **Five Notion pages still contain HTML entities** in their titles or bodies.
+   The sync decodes them, so the site is correct either way; this is only about
+   what you see when editing.
+9. **Learning journeys: still none.** The section, its routes, its schema and
+   its `HowTo` structured data all exist and the index renders an honest empty
+   state. It needs the first journey written in Notion — decision 0.7 says what
+   one is. Until then the build logs a harmless "collection is empty" warning.
 
 **Not in this plan, and worth naming**
 

@@ -1,0 +1,40 @@
+---
+/**
+ * The sage band carrying a page's title.
+ *
+ * On the live site every section page opens with the same ~167px band holding
+ * nothing but a teal display heading. Making it a component rather than five
+ * copies of a `div.hero-band` means the one `h1` on each page is guaranteed to
+ * be a display heading and to be the first thing in `<main>` — which is what
+ * the build test asserts, and what a screen reader reaches first.
+ */
+interface Props {
+  title: string;
+  /** The sentence under it. Section indexes have one; the live site's do not. */
+  lead?: string;
+}
+
+const { title, lead } = Astro.props;
+---
+
+<section class="band band--sage page-header" data-test="page-header">
+  <div class="wrap">
+    <h1 class="display">{title}</h1>
+    {lead && <p class="lead">{lead}</p>}
+  </div>
+</section>
+
+<style>
+  /* Tighter than a content band: this one holds a title and nothing else, and
+     the band below it supplies the breathing room. */
+  .page-header {
+    padding-block: var(--space-12) var(--space-6);
+  }
+  .page-header h1 {
+    margin-bottom: 0;
+  }
+  .lead {
+    max-width: var(--content-width);
+    margin: var(--space-5) 0 0;
+  }
+</style>

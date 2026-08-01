@@ -1,0 +1,86 @@
+---
+/**
+ * The "written by" panel at the foot of a post or talk.
+ *
+ * One person writes everything here, so this takes no props: the values come
+ * from `site.config.ts`, which is also what the `Person` structured data is
+ * built from. A component that accepted an author would imply there is more
+ * than one, and the next person would wonder where the others are.
+ */
+import { site } from '../../site.config.ts';
+import { media } from '../lib/media.ts';
+---
+
+<aside class="author" data-test="author">
+  <img
+    class="author__photo"
+    src={media.portrait}
+    alt=""
+    width="120"
+    height="120"
+    loading="lazy"
+  />
+  <div>
+    <p class="author__name">{site.author.name}</p>
+    <p class="author__bio">
+      Software architect enabler, independent trainer and facilitator. Co-author of
+      <em>Collaborative Software Design</em> and organiser of the Virtual Domain-Driven
+      Design community.
+    </p>
+    <ul class="chip-row">
+      {
+        site.author.links.map((l) => (
+          <li>
+            <a class="chip" href={l.url} rel="me">
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</aside>
+
+<style>
+  .author {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+    padding: var(--space-8);
+    margin-top: var(--space-12);
+    background: var(--color-bark);
+    color: var(--on-colour); /* 5.96:1 on the brown */
+  }
+  @media (min-width: 640px) {
+    .author {
+      grid-template-columns: 120px 1fr;
+      gap: var(--space-8);
+    }
+  }
+  .author__photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    filter: grayscale(1);
+  }
+  .author__name {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-heading);
+    font-size: var(--text-xl);
+  }
+  .author__bio {
+    margin: 0 0 var(--space-4);
+  }
+  /* The chips sit on brown here rather than on the page, so they need their own
+     border and text colour — the default chip is drawn for the sage ground. */
+  .author .chip {
+    background: transparent;
+    border-color: var(--on-colour);
+    color: var(--on-colour);
+  }
+  .author .chip:hover {
+    background: var(--on-colour);
+    color: var(--color-bark);
+  }
+</style>

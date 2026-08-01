@@ -2,56 +2,589 @@
 /**
  * The home page.
  *
- * A holding page, deliberately. It exists so the build, the deploy, the URL
- * contract and the tests are provable end to end before any content has moved —
- * see MIGRATION.md phase 1. Replace it once the brand and the content model are
- * settled; do not grow it in the meantime.
+ * Rebuilt to match the live WordPress site band for band, because the first
+ * attempt did not look like Weave IT at all — it was white-grounded, its
+ * headings were bold where the brand is light, and it had none of the
+ * full-bleed colour blocks that are the most recognisable thing about the
+ * design. See the note on `--color-bg` in tokens.css for the root error.
+ *
+ * **The talks and the posts come from the collections, not from copy.** That is
+ * the one deliberate difference from the WordPress original: both sections were
+ * hand-maintained there, and the whole point of the migration is that they stop
+ * being. Everything else — the band order, the colours, the type — follows the
+ * live page.
+ *
+ * Two things are deliberately *not* reproduced, and both are noted where they
+ * would have gone: the countdown timer on the next talk, and the contact form.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { media } from '../lib/media.ts';
+import ContactBand from '../components/ContactBand.astro';
 import { site } from '../../site.config.ts';
+import { posts, talks } from '../lib/collections.ts';
+import { collectionPage } from '../lib/seo.ts';
+import { excerpt, formatDate, isoDate } from '../lib/format.ts';
+
+const latestPosts = (await posts()).slice(0, 3);
+const { upcoming, past } = await talks();
+// Upcoming first, because "where can I see you next" is the question this
+// section answers; it falls back to the most recent past talks.
+const recentTalks = [...upcoming, ...past].slice(0, 4);
+const nextTalk = upcoming[0];
+
+/** The three services, in the order the live site lists them. */
+const services = [
+  {
+    title: 'Consultancy',
+    href: '/consultancy/',
+    icon: media.iconConsultancy,
+    body:
+      'I can consult your organisation in several ways, from enabling software ' +
+      'architecture capabilities in your organisation, redesigning your legacy ' +
+      'system landscape, assessing your software architecture to helping you ' +
+      'redesign your IT organisation.',
+  },
+  {
+    title: 'Training',
+    href: '/training/',
+    icon: media.iconTraining,
+    body:
+      'I provide standard or customised training and learning journeys in ' +
+      'collaborative software design, Domain-Driven Design, Team Topologies, ' +
+      'technical leadership, and software architecture.',
+  },
+  {
+    title: 'Talks',
+    href: '/talks/',
+    icon: media.iconTalks,
+    body:
+      'I am a regular speaker at international conferences. You can book me to do ' +
+      'talks or do short 2 to 3 hours hands-on workshops for your organisation or ' +
+      'conference.',
+  },
+];
+
+/** The other books, as the live "More books" block lists them. */
+const otherBooks = [
+  {
+    title: 'Visual Collaboration Tools',
+    cover: media.bookVisualCollaboration,
+    body:
+      'Visual Collaboration Tools is a book for teams building software. It ' +
+      'describes tools that help us in our daily job, and also presents field ' +
+      'stories from different practitioners.',
+  },
+  {
+    title: 'Domain-Driven Design: The First 15 Years',
+    cover: media.bookDdd15,
+    body:
+      'Fifteen years after the publication of “Domain-Driven Design: Tackling ' +
+      'Complexity in the Heart of Software” by Eric Evans, DDD is gaining more ' +
+      'adoption than ever.',
+  },
+  {
+    title: 'Architecture Modernization',
+    cover: media.bookArchitectureModernization,
+    body:
+      'For a business to thrive, it needs a modern software architecture that is ' +
+      'aligned with its corporate architecture.',
+  },
+];
+
+
+const jsonLd = [
+  collectionPage({
+    path: '/',
+    name: site.title,
+    description: site.description,
+    items: latestPosts.map((e) => ({ title: e.data.title, path: `/blog/${e.id}/` })),
+  }),
+];
 ---
 
-<BaseLayout title={site.title} description={site.description}>
-  <div class="wrap prose hero">
-    <h1>{site.tagline}</h1>
-    <p class="lead">{site.description}</p>
+<BaseLayout title={site.title} description={site.description} jsonLd={jsonLd}>
+  {/* ---------------------------------------------------------------- hero */}
+  <section class="band band--sage hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Collaborative software design</p>
+        <h1 class="display display--hero">Where every voice shapes the software</h1>
 
-    <ul class="sections">
-      {
-        site.sections
-          .filter((s) => s.inNav)
-          .map((s) => (
-            <li>
-              <a href={`/${s.path}/`}>{s.label}</a>
+        <p class="hero-intro"><strong>Hi, I’m Kenny (Baas) Schwegler.</strong></p>
+        <p>
+          I believe in collaborative software design where <em>‘every voice shapes the
+          software’</em>. Leveraging a domain-driven design approach with Team Topologies,
+          I facilitate clearer communication between stakeholders and software creators by
+          collaborative modelling and deep democracy, decoding complexities, resolving
+          conflicts and ensuring software remains agile to business demands.
+        </p>
+        <p>
+          As Software Architect Enabler at DHL eCommerce and independent trainer and
+          facilitator specialising in technical leadership, software architecture, and
+          sociotechnical system design, I work with organisations and teams to design
+          sustainable and resilient software architecture. I also co-authored{' '}
+          <em>Collaborative Software Design: How to Facilitate Domain Modeling Decisions</em>{' '}
+          and organise the Virtual Domain-Driven Design community to share these ideas more
+          widely.
+        </p>
+
+        <p class="hero-actions">
+          <a class="btn" href="/contact/">Contact</a>
+          <a class="btn btn--ghost" href={site.contact.scheduling}>Schedule a call</a>
+        </p>
+      </div>
+
+      {/* The portrait sits in an olive frame offset behind it. Decorative, so
+          `alt=""` — the page has already said whose site this is. */}
+      <div class="portrait">
+        <img
+          src={media.portrait}
+          alt=""
+          width="800"
+          height="800"
+          loading="eager"
+        />
+      </div>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------ services */}
+  <section class="band band--teal" data-test="services">
+    <div class="wrap">
+      <h2 class="display display--on-colour">How I do this</h2>
+      <p class="services-lead">
+        I can engage with your organisation in various capacities: from long-term
+        partnerships to shorter, impactful sessions like workshops, consultancy, coaching,
+        and targeted training.
+      </p>
+
+      <ul class="services">
+        {
+          services.map((s) => (
+            <li class="service">
+              <img class="service__icon" src={s.icon} alt="" width="100" height="100" loading="lazy" />
+              <h3 class="service__title">{s.title}</h3>
+              <p>{s.body}</p>
+              <p class="service__more">
+                <a href={s.href}>More info ›</a>
+              </p>
             </li>
           ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- book */}
+  <section class="band band--brown" data-test="book">
+    <div class="wrap book-grid">
+      <img
+        class="book-cover"
+        src={media.bookCsd}
+        alt="Collaborative Software Design, by Evelyn van Kelle, Gien Verschatse and Kenny Baas-Schwegler"
+        width="600"
+        height="925"
+        loading="lazy"
+      />
+
+      <div>
+        <p class="eyebrow">Read the early draft now!</p>
+        <h2 class="book-title">Collaborative Software Design</h2>
+        <p class="book-subtitle">How to facilitate domain modeling decisions</p>
+        <p>
+          Enable software teams to collaborate with their stakeholders, to understand their
+          needs, and to allow this understanding to shape their software architecture.
+        </p>
+        <p>
+          <a class="btn" href="https://www.manning.com/books/collaborative-software-design">
+            Get the book
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <div class="wrap more-books">
+      <h3 class="more-books__title">More books <span>in collaboration</span></h3>
+      <ul class="book-list">
+        {
+          otherBooks.map((bk) => (
+            <li class="book">
+              <img src={bk.cover} alt={bk.title} width="200" height="280" loading="lazy" />
+              <p>{bk.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  {/* --------------------------------------------------------------- talks */}
+  <section class="band band--sage" data-test="home-talks">
+    <div class="wrap">
+      {
+        nextTalk && (
+          <div class="next-talk">
+            <p class="eyebrow">Join my next hands-on</p>
+            {/* The live page runs a countdown here. Deliberately not carried
+                across: a countdown baked into a static build is wrong from the
+                moment it ships, and this is the same "derive, never store"
+                argument that keeps `upcoming` out of Notion. The date says it. */}
+            <h2 class="next-talk__title">{nextTalk.data.title}</h2>
+            <p class="next-talk__meta">
+              {[
+                nextTalk.data.date ? formatDate(nextTalk.data.date) : null,
+                nextTalk.data.event,
+                nextTalk.data.location,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+            <p>
+              <a class="btn" href={`/talks/${nextTalk.id}/`}>
+                See the talk
+              </a>
+            </p>
+          </div>
+        )
       }
-    </ul>
-  </div>
+
+      <h2 class="display">My most recent talks</h2>
+      <ul class="talk-list">
+        {
+          recentTalks.map((t) => (
+            <li class="talk-item">
+              <h3 class="talk-item__title">
+                <a href={`/talks/${t.id}/`}>{t.data.title}</a>
+              </h3>
+              <p class="talk-item__meta">
+                {t.data.date && <time datetime={isoDate(t.data.date)}>{formatDate(t.data.date)}</time>}
+                {t.data.event && <> · {t.data.event}</>}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+      <p><a class="btn" href="/talks/">All talks</a></p>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------- book me    */}
+  <section class="band band--sage book-me">
+    <div class="wrap book-me-grid">
+      <div>
+        <h2 class="display">Book me for a talk</h2>
+        <h3 class="book-me__sub">Or short hands-on workshop</h3>
+        <p>
+          You can book me to do talks or do short hands-on workshops for your organisation
+          or conference.
+        </p>
+        <p><a class="btn" href="/contact/">Get in touch</a></p>
+      </div>
+      <img
+        src={media.speaking}
+        alt=""
+        width="1000"
+        height="876"
+        loading="lazy"
+      />
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- blog */}
+  <section class="band band--green" data-test="home-blog">
+    <div class="wrap">
+      <h2 class="display display--on-colour">Latest blogposts</h2>
+      {
+        latestPosts.length === 0 ? (
+          <p class="empty">Nothing published here yet.</p>
+        ) : (
+          <ul class="grid-cards grid-cards--3">
+            {latestPosts.map((p) => (
+              <li class="card">
+                <div class="card__body">
+                  <h3 class="card__title">
+                    <a href={`/blog/${p.id}/`}>{p.data.title}</a>
+                  </h3>
+                  <p class="card__excerpt">{excerpt(p.body, p.data.seoDescription, 140)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <p class="blog-more"><a class="btn" href="/blog/">More blogposts</a></p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------ partners */}
+  <section class="band band--sage" data-test="partners">
+    <div class="wrap partners-grid">
+      <h2 class="display">Companies I collaborate with</h2>
+      <ul class="partners">
+        {
+          media.partners.map((p) => (
+            <li>
+              <img src={p.logo} alt={p.name} loading="lazy" />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <ContactBand />
 
   <style>
+    /* Hero ---------------------------------------------------------------- */
     .hero {
       padding-block: var(--space-16);
     }
-    .lead {
-      font-size: var(--text-lg);
-      color: var(--color-text-muted);
+    .hero-grid {
+      display: grid;
+      gap: var(--space-12);
+      align-items: start;
     }
-    .sections {
-      list-style: none;
-      padding: 0;
-      margin-top: var(--space-8);
+    @media (min-width: 800px) {
+      .hero-grid {
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: var(--space-16);
+      }
+    }
+    .hero-copy h1 {
+      margin-bottom: var(--space-6);
+    }
+    .hero-intro {
+      color: var(--color-heading);
+    }
+    .hero-actions {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: var(--space-4);
+      margin-top: var(--space-8);
     }
-    .sections a {
-      display: inline-block;
-      padding: var(--space-3) var(--space-5);
-      background: var(--color-primary-soft);
-      color: var(--on-brand);
-      border-radius: var(--radius);
-      text-decoration: none;
+
+    /* The olive frame is a pseudo-element offset behind the photograph — the
+       live site does it with two stacked Divi modules. One element, no extra
+       markup, and nothing a screen reader or the tab order has to step over. */
+    .portrait {
+      position: relative;
+      isolation: isolate;
     }
+    .portrait::after {
+      content: '';
+      position: absolute;
+      inset: var(--space-4) calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+      background: var(--color-accent);
+      z-index: -1;
+    }
+    .portrait img {
+      width: 100%;
+      height: auto;
+      filter: grayscale(1);
+    }
+
+    /* Services ------------------------------------------------------------ */
+    .services-lead {
+      max-width: var(--content-width);
+      margin-bottom: var(--space-12);
+    }
+    .services {
+      display: grid;
+      gap: var(--space-10);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    @media (min-width: 800px) {
+      .services {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .service__icon {
+      width: 84px;
+      height: auto;
+      margin-bottom: var(--space-4);
+    }
+    .service__title {
+      margin: 0 0 var(--space-3);
+      font-size: var(--text-xl);
+      color: var(--on-colour);
+    }
+    /* White, not the brand olive. The live site sets these gold on the teal,
+       which measures 1.95:1 — and no gold clears 4.5:1 on this teal at any
+       lightness, so white is the only honest version of the same link. */
+    .service__more a {
+      color: var(--on-colour);
+      text-decoration: underline;
+      text-transform: uppercase;
+      font-size: var(--text-sm);
+      letter-spacing: 1px;
+    }
+
+    /* Book ---------------------------------------------------------------- */
+    .book-grid {
+      display: grid;
+      gap: var(--space-10);
+      align-items: center;
+    }
+    @media (min-width: 800px) {
+      .book-grid {
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: var(--space-16);
+      }
+    }
+    .book-cover {
+      width: 100%;
+      max-width: 320px;
+      height: auto;
+      margin-inline: auto;
+    }
+    /* Poppins, not Share: the book title is set in the body face on the live
+       page, which is what makes it read as a product rather than a section. */
+    .book-title {
+      font-family: var(--font-body);
+      font-size: var(--text-4xl);
+      font-weight: 500;
+      line-height: 1.1;
+      color: var(--on-colour);
+      margin-bottom: var(--space-2);
+    }
+    .book-subtitle {
+      font-family: var(--font-heading);
+      font-size: var(--text-xl);
+      color: var(--on-colour);
+      margin-bottom: var(--space-6);
+    }
+    .more-books {
+      margin-top: var(--space-16);
+    }
+    .more-books__title {
+      font-size: var(--text-2xl);
+      color: var(--on-colour);
+    }
+    .more-books__title span {
+      color: var(--color-accent-pale);
+    }
+    .book-list {
+      display: grid;
+      gap: var(--space-8);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    @media (min-width: 640px) {
+      .book-list {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .book {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: var(--space-4);
+      align-items: start;
+      font-size: var(--text-sm);
+    }
+    .book img {
+      width: 100%;
+      height: auto;
+    }
+
+    /* Talks --------------------------------------------------------------- */
+    .next-talk {
+      padding: var(--space-10);
+      margin-bottom: var(--space-16);
+      background: var(--color-surface);
+      border-left: 6px solid var(--color-accent);
+    }
+    .next-talk__title {
+      margin-top: 0;
+      font-family: var(--font-heading);
+      font-size: var(--text-2xl);
+      font-weight: var(--weight-h2);
+    }
+    .next-talk__meta {
+      color: var(--color-heading);
+      font-weight: 500;
+    }
+    .talk-list {
+      list-style: none;
+      margin: 0 0 var(--space-8);
+      padding: 0;
+    }
+    .talk-item {
+      padding-block: var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .talk-item__title {
+      margin: 0 0 var(--space-1);
+      font-size: var(--text-xl);
+    }
+    .talk-item__meta {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    /* Book me ------------------------------------------------------------- */
+    .book-me-grid {
+      display: grid;
+      gap: var(--space-10);
+      align-items: center;
+    }
+    @media (min-width: 800px) {
+      .book-me-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .book-me__sub {
+      margin-top: 0;
+      font-family: var(--font-heading);
+      font-size: var(--text-2xl);
+      font-weight: var(--weight-h2);
+    }
+    .book-me-grid img {
+      width: 100%;
+      height: auto;
+    }
+
+    /* Blog ---------------------------------------------------------------- */
+    .blog-more {
+      margin-top: var(--space-10);
+      margin-bottom: 0;
+    }
+
+    /* Partners ------------------------------------------------------------ */
+    .partners-grid {
+      display: grid;
+      gap: var(--space-10);
+      align-items: center;
+    }
+    @media (min-width: 800px) {
+      .partners-grid {
+        grid-template-columns: 0.7fr 1.3fr;
+      }
+    }
+    .partners {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-8);
+      align-items: center;
+      list-style: none;
+      margin: 0;
+      padding: var(--space-8);
+      background: var(--color-surface);
+    }
+    @media (min-width: 640px) {
+      .partners {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .partners img {
+      width: 100%;
+      max-height: 60px;
+      object-fit: contain;
+    }
+
   </style>
 </BaseLayout>

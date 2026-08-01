@@ -1,0 +1,144 @@
+---
+/**
+ * The "Book me for …" band that opens consultancy, training and talks.
+ *
+ * Three pages, one shape: intro copy on the left under an outlined call to
+ * action and a "schedule a call" link, a photograph on the right with a huge
+ * ghost wordmark laid over it. Only the words, the photograph and the wordmark
+ * colour change between them, so those are the props and everything else is
+ * shared.
+ *
+ * **The heading inside the outlined box is ink, not white.** The live site sets
+ * it white on the sage ground — 1.4:1, the worst contrast on the whole site,
+ * and the text is 60px so it is not a small-print oversight. The outline, the
+ * box and the colour family are otherwise untouched.
+ */
+import { site } from '../../site.config.ts';
+
+interface Props {
+  /** "Book me for a training" — the whole line, so it can be phrased freely. */
+  cta: string;
+  /** The photograph, from `public/`. */
+  image: string;
+  /** The ghost wordmark laid over it: "WEAVEIT TRAINING". */
+  wordmark: string;
+  /** Which brand colour the wordmark is. Matches the live page's choice. */
+  wordmarkTone?: 'moss' | 'accent';
+}
+
+const { cta, image, wordmark, wordmarkTone = 'accent' } = Astro.props;
+---
+
+<section class="band band--sage book-me" data-test="book-me">
+  <div class="wrap book-me__grid">
+    <div class="book-me__copy">
+      <slot />
+
+      <div class="cta-box">
+        <p class="cta-box__title">{cta}</p>
+      </div>
+
+      <p class="schedule">
+        <a class="schedule__link" href={site.contact.scheduling}>
+          Schedule a call
+          {/* The arrow is decoration on a link that already says where it goes,
+              so it is `aria-hidden` rather than announced as "right arrow". */}
+          <span class="schedule__arrow" aria-hidden="true">→</span>
+        </a>
+      </p>
+    </div>
+
+    <div class="book-me__media">
+      <img src={image} alt="" loading="eager" />
+      <p class={`wordmark wordmark--${wordmarkTone}`} aria-hidden="true">{wordmark}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .book-me__grid {
+    display: grid;
+    gap: var(--space-10);
+    align-items: center;
+  }
+  @media (min-width: 800px) {
+    .book-me__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-12);
+    }
+  }
+
+  .cta-box {
+    margin-top: var(--space-10);
+    padding: var(--space-10) var(--space-8);
+    border: 3px solid var(--color-primary);
+  }
+  .cta-box__title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-h2);
+    line-height: 1.1;
+    /* Ink, not the live site's white — see the note at the top of this file. */
+    color: var(--color-primary-ink);
+  }
+
+  .schedule {
+    margin: 0;
+  }
+  .schedule__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-5);
+    font-family: var(--font-heading);
+    font-size: var(--text-2xl);
+    color: var(--color-primary-ink);
+    text-decoration: none;
+  }
+  .schedule__link:hover {
+    text-decoration: underline;
+  }
+  /* The teal square that hangs off the corner of the outlined box. */
+  .schedule__arrow {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: var(--color-primary);
+    color: var(--on-colour);
+    font-size: var(--text-xl);
+  }
+
+  .book-me__media {
+    position: relative;
+  }
+  .book-me__media img {
+    width: 100%;
+    height: auto;
+  }
+  /* The wordmark sits across the foot of the photograph, as on the live page.
+     `aria-hidden`, because it repeats the page title as decoration.
+
+     **Pulled below the image rather than laid across its middle.** On the live
+     page it crosses a wall of sticky notes and is close to unreadable there;
+     hanging it off the bottom edge keeps the same overlap gesture while putting
+     most of the letterforms on the flat sage where they can be seen. */
+  .wordmark {
+    margin: calc(var(--space-10) * -1) 0 0;
+    font-family: var(--font-heading);
+    font-size: clamp(1.5rem, 4.2vw, 2.5rem);
+    font-weight: var(--weight-h2);
+    letter-spacing: 0.22em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+  /* Both tones are large text on the sage, which needs 3:1 — the brand green is
+     2.11:1 and the brand olive 2.37:1, so each uses its darker twin. They are
+     decorative, but a wordmark nobody can read is not decoration either. */
+  .wordmark--moss {
+    color: var(--color-moss-ink);
+  }
+  .wordmark--accent {
+    color: var(--color-accent-ink);
+  }
+</style>

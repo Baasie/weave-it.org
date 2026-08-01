@@ -1,0 +1,120 @@
+---
+/**
+ * The two-column head of a detail page: cover on the left, kind badge, date and
+ * title on the right, with the ghost wordmark under them.
+ *
+ * The same shape opens a post, a talk and a course on the live site, so it is
+ * one component. What differs is only which facts exist — a post has a
+ * published date, a talk has a date and a venue, a course has neither — so the
+ * facts arrive as a list rather than as three optional props that each template
+ * would have to remember to pass.
+ */
+import CoverImage from './CoverImage.astro';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  /** "Blog", "Talk", "Training" — what kind of page this is. */
+  kind: string;
+  title: string;
+  /** Date, venue, duration: whatever this kind of page actually has. */
+  facts?: string[];
+  cover?: ImageMetadata;
+  /** Shown when the entry is only visible because this is dev or staging. */
+  draft?: string;
+}
+
+const { kind, title, facts = [], cover, draft } = Astro.props;
+---
+
+<section class="band band--sage entry-hero" data-test="entry-hero">
+  <div class="wrap entry-hero__grid">
+    {
+      cover && (
+        <div class="entry-hero__media">
+          <CoverImage src={cover} />
+        </div>
+      )
+    }
+
+    <div class="entry-hero__copy">
+      <p class="entry-hero__tags">
+        <span class="badge badge--kind" data-test="kind">{kind}</span>
+        {draft && <span class="badge badge--draft" data-test="draft">{draft}</span>}
+      </p>
+
+      {facts.length > 0 && <p class="entry-hero__facts" data-test="facts">{facts.join(' · ')}</p>}
+
+      <h1 class="entry-hero__title">{title}</h1>
+
+      {/* The ghost wordmark under the title is drawn by CSS, not written into
+          the markup. It is texture: it repeats the brand, says nothing the page
+          has not said, and is deliberately too faint to read. Text that faint is
+          a contrast failure however it is marked up — `aria-hidden` hides it
+          from a screen reader but not from someone looking at the screen — so
+          the honest place for it is a pseudo-element, where it is decoration by
+          construction rather than by assertion. */}
+      <p class="entry-hero__wordmark" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .entry-hero {
+    padding-block: var(--space-12);
+  }
+  .entry-hero__grid {
+    display: grid;
+    gap: var(--space-10);
+    align-items: center;
+  }
+  /* Only two columns when there is actually a cover to put in one. */
+  @media (min-width: 800px) {
+    .entry-hero__grid:has(.entry-hero__media) {
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: var(--space-12);
+    }
+  }
+  .entry-hero__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+  .entry-hero__facts {
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--color-text);
+  }
+  /* Share, near-black, and large — the live article title, measured. Not teal:
+     on a detail page the title is the page, not a section marker. */
+  .entry-hero__title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-h1);
+    line-height: 1.15;
+    color: var(--color-heading);
+  }
+  .entry-hero__wordmark {
+    margin: var(--space-2) 0 0;
+  }
+  .entry-hero__wordmark::after {
+    content: 'WeaveIT';
+    display: block;
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    font-weight: var(--weight-h2);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  /* Nothing that only exists to be looked at should survive into print or into
+     a reader that has asked for less. */
+  @media print {
+    .entry-hero__wordmark {
+      display: none;
+    }
+  }
+</style>

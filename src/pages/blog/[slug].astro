@@ -1,0 +1,95 @@
+---
+/**
+ * A blog post. `/blog/<slug>/` — the same address WordPress served.
+ */
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryHero from '../../components/EntryHero.astro';
+import AuthorCard from '../../components/AuthorCard.astro';
+import PrevNext from '../../components/PrevNext.astro';
+import { posts, isDraft, neighbours } from '../../lib/collections.ts';
+import { postJsonLd } from '../../lib/seo.ts';
+import { excerpt, formatDate, isoDate } from '../../lib/format.ts';
+
+export const getStaticPaths = (async () => {
+  const all = await posts();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry, all } }));
+}) satisfies GetStaticPaths;
+
+const { entry, all } = Astro.props;
+const { Content } = await render(entry);
+const { title, published, tags, seoDescription, canonicalUrl, featuredImage } = entry.data;
+
+const description = excerpt(entry.body, seoDescription, 160);
+const path = `/blog/${entry.id}/`;
+const { prev, next } = neighbours(all, entry.id);
+
+const jsonLd = [
+  postJsonLd({
+    path,
+    title,
+    description,
+    datePublished: published ? isoDate(published) : isoDate(new Date()),
+    keywords: tags,
+  }),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
+  noindex={isDraft(entry)}
+  markdown={`${path}index.md`}
+>
+  <EntryHero
+    kind="Blog"
+    title={title}
+    facts={published ? [formatDate(published)] : []}
+    cover={featuredImage}
+    draft={isDraft(entry) ? entry.data.status : undefined}
+  />
+
+  {/* Pagefind indexes the whole `<body>` unless something claims a narrower
+      region, which would put the nav and the footer of every page into every
+      search result. This is that claim. */}
+  <section class="band band--sage entry-body" data-pagefind-body>
+    <div class="wrap">
+      <article class="prose-body" data-test="body">
+        <Content />
+      </article>
+
+      {
+        canonicalUrl && (
+          <p class="canonical">
+            First published at <a href={canonicalUrl} rel="canonical">{new URL(canonicalUrl).hostname}</a>.
+          </p>
+        )
+      }
+
+      {
+        tags.length > 0 && (
+          <div class="entry-tags">
+            <h2 class="visually-hidden">Tags</h2>
+            <ul class="chip-row">
+              {tags.map((t) => (
+                <li>
+                  <a class="chip" href={`/blog/?tag=${encodeURIComponent(t)}`}>{t}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      <AuthorCard />
+
+      <PrevNext
+        label="Post"
+        prev={prev && { href: `/blog/${prev.id}/`, title: prev.data.title }}
+        next={next && { href: `/blog/${next.id}/`, title: next.data.title }}
+      />
+    </div>
+  </section>
+</BaseLayout>

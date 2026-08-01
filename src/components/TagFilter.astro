@@ -1,0 +1,150 @@
+---
+/**
+ * Filter an index by tag, in the browser.
+ *
+ * **This is a URL contract obligation, not a nicety.** WordPress had 57 tag
+ * archives and every one of them 301s to `/<section>/?tag=<x>` — see
+ * docs/urls.md. So `?tag=` arriving in the address bar must select that tag on
+ * load, or those 57 redirects land on an unfiltered list and the redirect was a
+ * lie.
+ *
+ * **With JavaScript off the reader gets the full list.** That is the honest
+ * degradation and it is deliberate: the alternative is 57 generated tag pages,
+ * which is 57 more addresses to keep alive for a filter most people reach by
+ * clicking rather than by URL. Nothing is hidden without JavaScript — the
+ * entries are in the HTML and Pagefind indexes them — so the failure mode is
+ * "less filtered", never "missing".
+ *
+ * The markup contract is `js-*` classes and `data-test` hooks only, so
+ * restyling any of this cannot break the script or the tests (AGENTS.md rule 5).
+ */
+interface Props {
+  tags: string[];
+  /** What the "everything" chip says: "All posts", "All talks". */
+  allLabel: string;
+  /** Announced to a screen reader when the count changes. */
+  noun: string;
+}
+
+const { tags, allLabel, noun } = Astro.props;
+---
+
+{
+  tags.length > 0 && (
+    <div class="tag-filter js-tag-filter" data-noun={noun} data-test="tag-filter">
+      <h2 class="visually-hidden">Filter by tag</h2>
+      <ul class="chip-row">
+        {/* `aria-current`, not `aria-pressed`. These are links — each filter is
+            a real URL, which is the whole reason the redirected tag archives
+            can land on one — and `aria-pressed` is only valid on something with
+            a button role. axe-core reports it as a critical violation, and it
+            is right to: a screen reader is told about a toggle that isn't one.
+            `aria-current="page"` is the attribute for "this link is the view
+            you are looking at". */}
+        <li>
+          <a class="chip js-tag chip--on" href="?" data-tag="" aria-current="page" data-test="tag-all">
+            {allLabel}
+          </a>
+        </li>
+        {tags.map((t) => (
+          <li>
+            <a
+              class="chip js-tag"
+              href={`?tag=${encodeURIComponent(t)}`}
+              data-tag={t}
+              data-test="tag"
+            >
+              {t}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {/* Empty until the script has something to say. `aria-live` so filtering
+          with the keyboard is not a silent change of the page. */}
+      <p class="filter-status muted js-filter-status" aria-live="polite" data-test="filter-status" />
+    </div>
+  )
+}
+
+<style>
+  .tag-filter {
+    margin-bottom: var(--space-8);
+  }
+  .filter-status {
+    margin: var(--space-3) 0 0;
+    font-size: var(--text-sm);
+    min-height: 1.5em;
+  }
+</style>
+
+<script>
+  /**
+   * One script for every index that has a filter. It finds its own list, so a
+   * page adds a filter by including the component and nothing else.
+   */
+  const filter = document.querySelector<HTMLElement>('.js-tag-filter');
+  const list = document.querySelector<HTMLElement>('.js-entry-list');
+
+  if (filter && list) {
+    const chips = [...filter.querySelectorAll<HTMLAnchorElement>('.js-tag')];
+    const entries = [...list.querySelectorAll<HTMLElement>('.js-entry')];
+    const status = filter.querySelector<HTMLElement>('.js-filter-status');
+    const noun = filter.dataset.noun ?? 'entries';
+
+    const apply = (tag: string, push: boolean) => {
+      // Tags are normalised to lower case by the sync (src/lib/tags.ts), but a
+      // hand-typed or redirected URL is not, so compare case-insensitively
+      // rather than trusting what arrived.
+      const want = tag.trim().toLowerCase();
+      let shown = 0;
+
+      for (const entry of entries) {
+        const tags = (entry.dataset.tags ?? '').toLowerCase().split('|').filter(Boolean);
+        const match = !want || tags.includes(want);
+        entry.hidden = !match;
+        if (match) shown += 1;
+      }
+
+      for (const chip of chips) {
+        const on = (chip.dataset.tag ?? '').toLowerCase() === want;
+        // Removed rather than set to "false": `aria-current` is absent-or-set,
+        // and the string "false" is the one value that means absent.
+        if (on) chip.setAttribute('aria-current', 'page');
+        else chip.removeAttribute('aria-current');
+        chip.classList.toggle('chip--on', on);
+      }
+
+      if (status) {
+        status.textContent = want
+          ? `${shown} ${shown === 1 ? noun.replace(/s$/, '') : noun} tagged “${want}”.`
+          : '';
+      }
+
+      if (push) {
+        const url = new URL(window.location.href);
+        if (want) url.searchParams.set('tag', want);
+        else url.searchParams.delete('tag');
+        history.pushState({ tag: want }, '', url);
+      }
+    };
+
+    for (const chip of chips) {
+      chip.addEventListener('click', (event) => {
+        // Let a modified click open a new tab — that URL filters on load, so
+        // the link is genuinely a link and not a button wearing an href.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        event.preventDefault();
+        apply(chip.dataset.tag ?? '', true);
+      });
+    }
+
+    // Back and forward move between filters, because each one is a URL.
+    window.addEventListener('popstate', () => {
+      apply(new URL(window.location.href).searchParams.get('tag') ?? '', false);
+    });
+
+    // The redirected tag archive lands here.
+    const initial = new URL(window.location.href).searchParams.get('tag');
+    if (initial) apply(initial, false);
+  }
+</script>

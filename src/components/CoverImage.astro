@@ -1,0 +1,48 @@
+---
+/**
+ * The banner image at the top of a detail page.
+ *
+ * One component because all four detail templates want the identical thing,
+ * and because the rule it enforces is easy to get wrong in four places
+ * separately: **width only, never width and height**. Notion covers are
+ * whatever shape the editor uploaded — several of the imported ones are
+ * portrait book jackets — so handing Astro both dimensions makes it resize to
+ * that exact box and squash them. The crop is CSS.
+ *
+ * Capped in height for the same reason: an uncropped portrait cover at full
+ * content width fills the whole first screen and pushes the article itself
+ * below the fold. A cover is a banner, not the page.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  /** Only ever set when the image carries meaning the page does not repeat. */
+  alt?: string;
+}
+
+const { src, alt = '' } = Astro.props;
+
+// Never ask for more pixels than the file has. Several of the imported covers
+// are 600px wide, and requesting 1200 makes Astro upscale them: a bigger file
+// that looks worse than the original. `min` costs nothing on a large source.
+const width = Math.min(1200, src.width);
+---
+
+<Image class="cover" src={src} alt={alt} width={width} loading="eager" data-test="cover" />
+
+<style>
+  .cover {
+    width: 100%;
+    max-width: var(--wide-width);
+    max-height: 24rem;
+    object-fit: cover;
+    /* Crop from the bottom, not from both ends. What matters in a cover is
+       almost always at the top — a book jacket's title, a slide's heading, a
+       photograph's subject — and centring the crop cuts exactly that off. */
+    object-position: center top;
+    border-radius: var(--radius);
+    margin-bottom: var(--space-10);
+  }
+</style>
