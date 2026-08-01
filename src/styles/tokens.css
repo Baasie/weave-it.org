@@ -1,0 +1,129 @@
+/* Design tokens — matched to the live weave-it.org brand.
+ *
+ * Light ground, near-black text, teal as the primary and a set of earthy
+ * secondaries. Share for headings over Poppins for body.
+ *
+ * **This is the inverse of virtualddd.com**, which is the single most useful
+ * thing to know when porting a component across: that site is a dark canvas
+ * with two bright neons, and every overlay, scrim and `--on-*` decision there
+ * was made for text sitting *on* darkness. Here the default ground is light,
+ * so a component copied over without reading its colours will look inverted
+ * and usually fail contrast. Take the markup; re-derive the colours.
+ *
+ * Extracted from the live Divi theme on 2026-07-31. Treat it as accurate to
+ * what is published, not as the brand guide — the Art of Design source files
+ * are the authority, and MIGRATION.md phase 2 replaces these values from them.
+ */
+:root {
+  /* Brand ------------------------------------------------------------- */
+
+  /* Teal. Every heading on the live site is this colour. Measured 4.64:1 on
+     white, which clears 4.5:1 — but only just, so it is a *heading* colour and
+     small print must not borrow it. `--color-primary-ink` is the darker twin
+     for anywhere it has to carry body copy. */
+  --color-primary: #4b7d7d;
+  --color-primary-ink: #3a6161; /* teal, darkened; 6.9:1 on white */
+  --color-primary-soft: #d0d5d2; /* the sage the site uses as a quiet panel */
+
+  /* The earthy secondaries, measured against white:
+   *
+   *   olive  #b9aa3a  2.37:1  fills and borders only — see --color-accent-ink
+   *   green  #749b62  3.18:1  large text, borders and UI; not body copy
+   *   brown  #7e5e2c  5.96:1  safe as text
+   *
+   * The live Divi site sets body copy in the olive, which is the one real
+   * accessibility defect carried over from it. Fixed here rather than
+   * reproduced: the fill keeps the exact brand value, and text that wants to
+   * be olive uses the darkened twin below. Nothing changes colour family. */
+  --color-accent: #b9aa3a; /* olive gold — fills, borders, chips */
+  --color-accent-ink: #7a6f1e; /* the same olive, darkened; 5.1:1 on white */
+  --color-moss: #749b62; /* green */
+  --color-bark: #7e5e2c; /* brown */
+
+  /* Neutrals (light theme) --------------------------------------------- */
+  --color-text: #212121;
+  --color-text-muted: #4e4b66;
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f4;
+  --color-surface-2: #ebebeb;
+  --color-border: #d8d8d8;
+
+  /* Text on a coloured fill --------------------------------------------
+   *
+   * Two different jobs, so two tokens, and they are not interchangeable. This
+   * is the defect virtualddd.com shipped and then wrote a browser test to stop
+   * recurring — white on a bright brand fill measured 2.22:1 there, and the
+   * failing element was a button.
+   *
+   * The same maths applies here and lands the same way. On the olive
+   * `--color-accent`: white is 2.37:1 and fails; `--color-text` is 6.8:1 and
+   * passes. So:
+   *
+   *   --on-brand   text on a *solid* brand fill (a chip, a button, a panel).
+   *                Ink, because these fills are light and saturated.
+   *   --on-colour  text over a *photograph* that already carries a scrim.
+   *                White, because the scrim under it is dark.
+   *
+   * Teal is the exception among the fills — dark enough to take white at
+   * 4.6:1 — but it takes ink too, and one rule that is always right beats two
+   * that need remembering. */
+  --on-brand: var(--color-text);
+  --on-colour: #fff;
+  --on-colour-muted: rgba(255, 255, 255, 0.9);
+
+  /* Overlays. Only reusable surfaces are tokens: the stops inside one
+     component's own scrim gradient are a shape, not a palette, and naming each
+     would produce tokens nobody could reuse. */
+  --scrim-weak: rgba(0, 0, 0, 0.3);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --scrim-strong: rgba(0, 0, 0, 0.75);
+  --tint-primary: rgba(75, 125, 125, 0.1);
+  --tint-accent: rgba(185, 170, 58, 0.12);
+
+  /* Typography ---------------------------------------------------------- */
+  --font-heading: 'Share', Georgia, serif;
+  --font-body: 'Poppins', system-ui, -apple-system, sans-serif;
+
+  /* Type scale (~1.25 major third) */
+  --text-sm: 0.8rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.95rem;
+  --text-3xl: 2.5rem;
+  /* Clamped rather than flat, so one long unbroken word in a title cannot make
+     a 360px phone scroll sideways. Full size from ~600px up. */
+  --text-4xl: clamp(2.2rem, 8.5vw, 3.2rem);
+
+  /* Spacing ------------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Layout -------------------------------------------------------------- */
+  --content-width: 46rem;
+  --wide-width: 72rem;
+  --radius: 4px;
+  --radius-sm: 2px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Breakpoints — three, and only three.
+   *
+   *   640px  stop stacking; two columns
+   *   800px  the main layout switch (sidebars, three-up banners)
+   *   900px  wide two-column layouts
+   *
+   * CSS cannot use a custom property inside a media query, so these are
+   * recorded here and written literally in the stylesheets. The max-width
+   * companions are 639.98px and 799.98px, so a range never overlaps its
+   * partner. Resist adding a fourth: on the site this pattern came from there
+   * were eleven, and the ones nobody chose made the layout change shape at
+   * arbitrary widths. */
+}

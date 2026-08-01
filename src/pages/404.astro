@@ -1,0 +1,48 @@
+---
+/**
+ * Not found.
+ *
+ * `.htaccess` points `ErrorDocument 404` here. Without it the host serves its
+ * own: an unbranded page with no way back into the site.
+ *
+ * Astro special-cases this file into `dist/404.html` rather than a directory,
+ * which is why the ErrorDocument line names `/404.html` and every other page is
+ * a directory with an `index.html`.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../../site.config.ts';
+---
+
+<BaseLayout
+  title="Page not found"
+  description="That address does not exist on this site."
+  suffix
+  noindex
+>
+  <div class="wrap prose page">
+    <h1>Page not found</h1>
+    <p>
+      That address does not exist. It may have been mistyped, or it may never
+      have been a page here.
+    </p>
+    <p>Try one of these instead:</p>
+    <ul>
+      <li><a href="/">Home</a></li>
+      {
+        site.sections
+          .filter((s) => s.inNav)
+          .map((s) => (
+            <li>
+              <a href={`/${s.path}/`}>{s.label}</a>
+            </li>
+          ))
+      }
+    </ul>
+  </div>
+
+  <style>
+    .page {
+      padding-block: var(--space-16);
+    }
+  </style>
+</BaseLayout>

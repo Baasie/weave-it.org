@@ -1,0 +1,183 @@
+# Pull content from Notion, and deploy if anything actually changed.
+#
+# Two triggers, deliberately:
+#
+#   repository_dispatch  n8n fires this the moment something is published, and
+#                        on its own hourly clock for ordinary edits. The hourly
+#                        one is the part that matters: the `schedule:` below
+#                        asks for :35 and GitHub routinely fires it two to three
+#                        hours apart on a repository that is mostly quiet.
+#
+#   schedule             the nightly full sync, and a backstop for the hourly
+#                        one. `--full` ignores the incremental state and
+#                        re-pulls every body, so any drift — a missed dispatch,
+#                        an image whose source died — heals within a day.
+#                        GitHub being hours late with *that* costs nothing,
+#                        which is why it stays here while the hourly clock
+#                        belongs to n8n.
+#
+# Nothing is deployed unless the sync produced a diff, so the two clocks
+# overlapping cost a minute of CI and nothing else.
+#
+# The collection list below must match `sync:notion` in package.json. It is not
+# that script because only the content collections take `--full`, and adding a
+# collection here and forgetting there (or the other way round) is a collection
+# that silently never updates.
+name: Sync from Notion
+
+on:
+  repository_dispatch:
+    types: [content-published, content-edited]
+  schedule:
+    - cron: '35 * * * *' # hourly, for edits — backstop; n8n keeps this hour
+    - cron: '17 3 * * *' # nightly, --full, for drift
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Re-fetch every page, ignoring the incremental state
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      summary: ${{ steps.diff.outputs.summary }}
+      # The commit this run made. The deploy has to be told, or it builds the
+      # site as it stood before the sync — see the `ref` input in deploy.yml.
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Pull Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          FULL: ${{ (github.event.schedule == '17 3 * * *' || inputs.full) && '--full' || '' }}
+        run: |
+          for c in posts talks training learning-journeys; do
+            npx tsx scripts/sync-notion.ts content --collection=$c --write $FULL
+          done
+          npm run redirects
+
+      - name: What changed?
+        id: diff
+        run: |
+          # Stage first, and ask the index rather than the working tree.
+          # `git diff` cannot see a file git has never heard of, and that is
+          # every file of a collection the *first* time it syncs — which, on a
+          # site being migrated, is every collection. `git add -A` is what the
+          # commit step does anyway, so doing it here means the thing we test is
+          # the thing we would commit.
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing changed in Notion since the last sync." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Content changes"
+            echo
+            git diff --cached --name-status -- src/content data/retired-urls.csv | sed 's/^/    /'
+          } >> "$GITHUB_STEP_SUMMARY"
+          added=$(git diff --cached --diff-filter=A --name-only -- src/content | wc -l)
+          modified=$(git diff --cached --diff-filter=M --name-only -- src/content | wc -l)
+          removed=$(git diff --cached --diff-filter=D --name-only -- src/content | wc -l)
+          echo "summary=${added} new, ${modified} updated, ${removed} removed" >> "$GITHUB_OUTPUT"
+
+      # Things the sync can see but must not decide: an address still being
+      # served after its page stopped being published, a page Notion calls
+      # published that has no slug and so no address at all, an image whose
+      # source has gone. None is worth failing a run over, and all are invisible
+      # if they only reach a CI log.
+      #
+      # Before the commit, so HEAD is still the previous run and the file's own
+      # diff is the whole test: the same alert is only ever raised once.
+      - name: Anything only a person can decide?
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          HOOK: ${{ secrets.N8N_DEPLOY_WEBHOOK }}
+          TOKEN: ${{ secrets.N8N_WEBHOOK_TOKEN }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$HOOK" ] || { echo "No webhook configured, so nobody was told."; exit 0; }
+          [ -f data/sync-alerts.json ] || { echo "Nothing to raise."; exit 0; }
+          # The whole test below is this file's own diff, so it has to be a file
+          # git will talk about. Gitignored, `--porcelain` says nothing about it
+          # however much it changed, and every alert takes the "already raised"
+          # branch and reaches nobody. Tripwire rather than a comment, because
+          # that failure is silent and looks exactly like having nothing to say.
+          if git check-ignore -q data/sync-alerts.json; then
+            echo "::error::data/sync-alerts.json is gitignored, so no alert can ever be raised."
+            exit 1
+          fi
+          # --porcelain rather than `git diff`, which cannot see a file that has
+          # never been committed — the very first alert is exactly that case.
+          [ -n "$(git status --porcelain -- data/sync-alerts.json)" ] \
+            || { echo "The same as last time; already raised."; exit 0; }
+          items=$(jq -c '.items // []' data/sync-alerts.json)
+          [ "$items" = "[]" ] && { echo "Everything outstanding has been resolved."; exit 0; }
+          code=$(jq -n --argjson items "$items" --arg run "$RUN" \
+            '{event:"sync-alerts", items:$items, run:$run}' \
+            | curl -sS -o /dev/null -w '%{http_code}' -X POST \
+                -H 'Content-Type: application/json' \
+                -H "X-WeaveIT-Token: $TOKEN" \
+                -d @- "$HOOK")
+          # Never fails the run. These alerts are editorial, and publishing must
+          # not be held hostage to a chat webhook — but an alert that silently
+          # went nowhere is worse than no alert, so it is said out loud.
+          case "$code" in
+            2*) echo "Raised ($code)." ;;
+            403) echo "::warning::n8n rejected the alert (403). Is N8N_WEBHOOK_TOKEN set, and does it match the Header Auth credential in n8n?" ;;
+            *)   echo "::warning::n8n answered $code; these alerts reached nobody:"; echo "$items" | jq -r '.[] | "  " + .kind + ": " + .title' ;;
+          esac
+
+      - name: Commit
+        id: commit
+        run: |
+          git config user.name  "weave-it-sync"
+          git config user.email "noreply@weave-it.org"
+          git add -A
+          git commit -m "Content: ${{ steps.diff.outputs.summary }}" \
+                     -m "Synced from Notion by ${{ github.event_name }}."
+          # A sync takes a couple of minutes, and anything landing on main in
+          # that window makes this push a non-fast-forward — which loses the
+          # run's content until the next sync happens to run. Rebasing is safe
+          # here because these are whole-file rewrites of generated content, and
+          # a human editing src/content is refused by the deploy anyway.
+          for attempt in 1 2 3; do
+            if git push; then break; fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::main moved three times while this sync was working; nothing pushed."
+              exit 1
+            fi
+            echo "main moved while this run was working; rebasing and retrying"
+            git pull --rebase origin main
+          done
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        if: steps.diff.outputs.changed == 'true'
+
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      changes: ${{ needs.sync.outputs.summary }}
+      ref: ${{ needs.sync.outputs.sha }}

@@ -1,0 +1,328 @@
+# Build the site and put it on the host.
+#
+# This never talks to Notion: the content is committed, so a deploy is
+# reproducible from the repository alone. `sync.yml` is what fetches content,
+# and it calls this once it has committed something.
+#
+# The tests gate the deploy on purpose. If they fail the previous release stays
+# live — a stale site is better than a broken one.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'LICENSE*']
+  # A pull request gets everything above the deploy line: types, build, the
+  # blocking suite. Nothing here had *any* check on a pull request before, so a
+  # dependency bump could only be judged after it had already landed on main.
+  # The same file rather than a second one, because the thing worth running is
+  # identical and a copy would drift.
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'LICENSE*']
+  workflow_call:
+    inputs:
+      changes:
+        description: A short human summary of what changed, for the notification.
+        type: string
+        required: false
+      ref:
+        # A called workflow runs at the *caller's* commit, and the sync commits
+        # after its run began — so without this the deploy built the site as it
+        # was before the content it was called to publish. Eight organiser
+        # photos were restored by a sync and the deploy that followed shipped
+        # the build without them. The sync passes the sha it just pushed.
+        description: The commit to build. Defaults to the one that triggered the run.
+        type: string
+        required: false
+  # The same `changes` line a caller can pass, so a run started by hand or by
+  # another workflow can say why. refresh-feed.yml uses it to explain a rebuild
+  # that carries no content change at all.
+  workflow_dispatch:
+    inputs:
+      changes:
+        description: A short human summary of what changed, for the notification.
+        type: string
+        required: false
+
+# One deploy at a time. Two rsyncs into the same directory would interleave.
+# Production is one queue, and stays one queue: two deploys must never rsync
+# the same docroot at once, and a queued one must not be dropped.
+#
+# Pull requests get a queue each, keyed by branch. They joined the production
+# group the moment this workflow started answering them, and three Dependabot
+# pull requests arriving together promptly cancelled two of each other — only
+# one run may sit pending in a group. A rehearsal must not be able to jostle a
+# release, in either direction.
+concurrency:
+  group: >-
+    deploy-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Read-only. This job builds and rsyncs; it never writes to the repository,
+# and the token it is handed should not be able to. The repository default is
+# write, which is a 2019 default nobody chose.
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the guard below diffs against the previous commit
+          ref: ${{ inputs.ref || github.sha }}
+
+      # Say which commit is being published, every time. The defect this
+      # replaces was invisible precisely because nothing ever printed it: the
+      # run was green, the summary named the content that had changed, and the
+      # build was of the commit before it.
+      - name: What is being built?
+        # Inputs arrive as environment variables rather than being pasted into
+        # the script. Nothing reaching this workflow is attacker-controlled
+        # today — every path to it needs write access — but a `${{ }}` expanded
+        # inside `run:` is expanded by the runner *before* the shell sees it,
+        # so the day an untrusted value reaches one, it is already a shell
+        # injection. Cheaper to never write the pattern.
+        env:
+          ASKED: ${{ inputs.ref }}
+        run: |
+          built=$(git rev-parse HEAD)
+          echo "Building $built" >> "$GITHUB_STEP_SUMMARY"
+          git log -1 --format='%s (%an)' >> "$GITHUB_STEP_SUMMARY"
+          asked="$ASKED"
+          if [ -n "$asked" ] && [ "$built" != "$asked" ]; then
+            echo "::error::Asked to build $asked but the tree is at $built."
+            exit 1
+          fi
+
+      # Generated content belongs to Notion, and only the sync may change it.
+      # A hand edit here is not a merge conflict to resolve: it will be undone
+      # by the next sync, and until then the site says something Notion does
+      # not. Better to stop and say so than to deploy it.
+      - name: Did anyone hand-edit the generated content?
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          touched=$(git diff --name-only "$BEFORE" "$SHA" -- src/content 2>/dev/null || true)
+          [ -z "$touched" ] && { echo "No generated content touched."; exit 0; }
+          author=$(git log -1 --format='%an' "$SHA")
+          if [ "$author" = "weave-it-sync" ]; then
+            echo "Changed by the sync, which is the only thing allowed to."
+            exit 0
+          fi
+          {
+            echo "### Generated content was edited by hand"
+            echo
+            echo "\`src/content/\` is written by \`npm run sync\` from Notion, and never edited here."
+            echo "The next sync will replace these files, so the change would be lost anyway:"
+            echo
+            echo "$touched" | sed 's/^/    /'
+            echo
+            echo "Make the change in Notion instead. If the *shape* of the content needs to"
+            echo "change, that is a schema change; see docs/content-model.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Generated content under src/content/ was edited by hand (author: $author). Change it in Notion."
+          exit 1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Types
+        run: npx astro check
+
+      # Repository *variables*, not secrets: both values are visible in the page
+      # source of every page, so hiding them would only make them harder to
+      # change. Unset means no analytics tag at all, which is what a fork gets.
+      - name: Build
+        env:
+          PUBLIC_ANALYTICS_SRC: ${{ vars.PUBLIC_ANALYTICS_SRC }}
+          PUBLIC_ANALYTICS_DOMAIN: ${{ vars.PUBLIC_ANALYTICS_DOMAIN }}
+        run: npm run build
+
+      - name: Contracts, redirects and browser behaviour
+        run: |
+          npx playwright install --with-deps chromium
+          node --import tsx --test "tests/unit/*.test.mjs"
+          node --test "tests/*.test.mjs"
+
+      # Reports rather than blocks: these fail because of what someone wrote in
+      # Notion, and publishing must never be hostage to an editorial typo.
+      - name: Content report
+        continue-on-error: true
+        run: npm run test:content
+
+      # Everything above this line is worth running on every push whether or
+      # not a host is configured — it is what stops a broken site shipping.
+      # The deploy itself waits until someone has wired the secrets.
+      - name: Is there anywhere to deploy to?
+        id: target
+        env:
+          HOST: ${{ secrets.KUALO_HOST }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          [ -n "$SITE_URL" ] && echo "verify=true" >> "$GITHUB_OUTPUT" || echo "verify=false" >> "$GITHUB_OUTPUT"
+          # A pull request is a rehearsal: it proves the build and the tests,
+          # and it publishes nothing. Guarding here rather than on each step
+          # below means the deploy and the verification are already reading it.
+          if [ "$EVENT" = "pull_request" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Pull request: built and tested, not deployed." >> "$GITHUB_STEP_SUMMARY"
+          elif [ -z "$HOST" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "No KUALO_HOST secret set, so nothing was deployed." >> "$GITHUB_STEP_SUMMARY"
+            echo "The build and the tests above still ran, and they passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Done by hand rather than with a third-party action: this step is handed
+      # an SSH key, and it is worth being able to read exactly what happens to
+      # it — write, chmod 600, use, delete.
+      #
+      # Releases are atomic. Each deploy is rsynced into its own directory and
+      # the document root is a symlink that is swapped when the copy is
+      # complete, so nobody ever sees a half-written site, and a rollback is
+      # one `ln -sfn` away.
+      - name: Deploy
+        if: steps.target.outputs.ready == 'true'
+        env:
+          SSH_KEY: ${{ secrets.KUALO_SSH_KEY }}
+          HOST: ${{ secrets.KUALO_HOST }}
+          SSH_USER: ${{ secrets.KUALO_USER }}
+          DOCROOT: ${{ secrets.KUALO_PATH }}
+          PORT: ${{ secrets.KUALO_SSH_PORT || '22' }}
+          KEEP: 5
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Say why, when it does not work. Swallowing ssh-keyscan's stderr
+          # once cost an afternoon: the deploy failed in six silent seconds
+          # because there was no host key to verify against, and the log said
+          # nothing at all.
+          if ! timeout 20 bash -c "</dev/tcp/$HOST/$PORT" 2>/dev/null; then
+            echo "::error::Cannot reach the host on port $PORT from this runner."
+            echo "The host is up (it serves the site), so this is usually the host's"
+            echo "brute-force protection blocking a GitHub runner IP. Kualo: cPHulk."
+            exit 1
+          fi
+          if ! ssh-keyscan -T 15 -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts 2>/tmp/keyscan.err; then
+            echo "::error::ssh-keyscan failed:"; cat /tmp/keyscan.err; exit 1
+          fi
+          grep -q . ~/.ssh/known_hosts || { echo "::error::ssh-keyscan returned no host key."; cat /tmp/keyscan.err; exit 1; }
+          SSH="ssh -i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes -o ConnectTimeout=20"
+          # The commit that was *built*, which is not github.sha when the sync
+          # called this workflow — a release directory named after anything
+          # else makes a rollback pick the wrong site.
+          RELEASE="releases/$(git rev-parse HEAD)"
+
+          # DOCROOT is interpolated into single quotes in a shell on the host,
+          # so nothing in it is ever expanded. A value starting with ~ used to
+          # get all the way to the final `ln` before failing with "No such file
+          # or directory", after a green build and a complete upload, because
+          # the host was looking for a directory literally called "~".
+          case "$DOCROOT" in
+            /*) ;;
+            "~"*) echo "::error::KUALO_PATH starts with ~, which is never expanded — it is used inside single quotes in a shell on the host. Use the absolute path, e.g. /home/<user>/weave-it.org."; exit 1 ;;
+            *)  echo "::error::KUALO_PATH must be an absolute path beginning with /."; exit 1 ;;
+          esac
+
+          # Never replace a real directory. If the document root is not already
+          # a symlink it may be a live site put there by someone else, and CI
+          # is not the place to find out. Switching it over is a deliberate,
+          # one-time human step; see docs/operations.md.
+          $SSH "$SSH_USER@$HOST" "
+            set -e
+            if [ -e '$DOCROOT' ] && [ ! -L '$DOCROOT' ]; then
+              echo '$DOCROOT exists and is a real directory, not a symlink.'
+              echo 'Refusing to touch it. See docs/operations.md.'
+              exit 1
+            fi
+            # Said here rather than at the swap, where it is one opaque line
+            # from ln at the very end of a deploy that otherwise worked.
+            if [ ! -d \"\$(dirname '$DOCROOT')\" ]; then
+              echo \"KUALO_PATH's parent directory does not exist on this host:\"
+              echo \"  \$(dirname '$DOCROOT')\"
+              echo 'Check the value against \$HOME on the host — the cPanel user is often not what the domain suggests.'
+              exit 1
+            fi
+            mkdir -p '$RELEASE'
+          "
+
+          rsync --archive --compress --delete --human-readable \
+            -e "$SSH" dist/ "$SSH_USER@$HOST:$RELEASE/"
+
+          # The swap, and tidy up old releases.
+          $SSH "$SSH_USER@$HOST" "
+            set -e
+            ln -sfn \"\$HOME/$RELEASE\" '$DOCROOT'
+            ls -1dt \"\$HOME\"/releases/*/ | tail -n +\$(( $KEEP + 1 )) | xargs -r rm -rf
+            echo \"live: \$(readlink '$DOCROOT')\"
+          "
+          rm -f ~/.ssh/deploy_key
+
+      # The check that cannot be done locally: only the real server proves the
+      # .htaccess is honoured, that a 410 is a 410, and that a .md file is
+      # served as markdown rather than downloaded.
+      # Apache does not pick the new release up the instant the symlink moves.
+      # For the best part of a minute afterwards every address answers 200 from
+      # the document root — measured: 105 of 105 sampled URLs, no redirects and
+      # no 410s at all, then entirely correct a minute later. Verifying inside
+      # that window fails a deploy that shipped perfectly well, and takes the
+      # release notice down with it, because the notice waits on this step.
+      #
+      # So wait, rather than teach the check to tolerate a wrong answer. What is
+      # being verified is the live site, and the live site is not ready yet.
+      - name: Let the release settle
+        if: steps.target.outputs.ready == 'true' && steps.target.outputs.verify == 'true'
+        run: sleep 60
+
+      - name: Verify the deployed host
+        if: steps.target.outputs.ready == 'true' && steps.target.outputs.verify == 'true'
+        run: npm run verify:live "${{ secrets.SITE_URL }}"
+
+      # Only after the site is actually live, so a post never links to a page
+      # that has not shipped. And a warning rather than a failure for the same
+      # reason: by this point the site is deployed and verified, so a message
+      # nobody received is not grounds for calling a good deploy bad.
+      - name: Tell n8n what shipped
+        if: success() && steps.target.outputs.ready == 'true'
+        env:
+          HOOK: ${{ secrets.N8N_DEPLOY_WEBHOOK }}
+          TOKEN: ${{ secrets.N8N_WEBHOOK_TOKEN }}
+          CHANGES: ${{ inputs.changes }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          [ -n "$HOOK" ] || { echo "no deploy webhook configured, skipping"; exit 0; }
+          # What was built, not what triggered the run — see the `ref` input.
+          # A release post linking to the commit before the one it published
+          # is how this defect stayed invisible.
+          built=$(git rev-parse HEAD)
+          code=$(jq -n \
+            --arg commit "$built" \
+            --arg url "$SERVER/$REPO/commit/$built" \
+            --arg changes "$CHANGES" \
+            --arg run "$SERVER/$REPO/actions/runs/$RUN_ID" \
+            '{event:"deployed", site:"https://weave-it.org", commit:$commit, commitUrl:$url, changes:$changes, run:$run}' \
+            | curl -sS -o /dev/null -w '%{http_code}' -X POST \
+                -H 'Content-Type: application/json' \
+                -H "X-WeaveIT-Token: $TOKEN" \
+                -d @- "$HOOK")
+          case "$code" in
+            2*) echo "n8n was told ($code)." ;;
+            403) echo "::warning::n8n rejected the notice (403). Is N8N_WEBHOOK_TOKEN set, and does it match the Header Auth credential in n8n?" ;;
+            *)   echo "::warning::n8n answered $code; nothing was posted. The deploy itself is fine." ;;
+          esac

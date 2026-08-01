@@ -1,0 +1,48 @@
+---
+/**
+ * Gone, on purpose.
+ *
+ * The body of a `410` response, served for addresses this site deliberately
+ * retired rather than redirected. Without it the host answers with a bare
+ * "Gone", which tells a person nothing at all.
+ *
+ * It is a page in the build but not a page of the site: kept out of the sitemap
+ * (see `astro.config.mjs`) and `noindex`, because it is an error body and not
+ * somewhere anyone should be sent from search.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../../site.config.ts';
+---
+
+<BaseLayout
+  title="This page is gone"
+  description="This address was retired on purpose."
+  suffix
+  noindex
+>
+  <div class="wrap prose page">
+    <h1>This page is gone</h1>
+    <p>
+      That address used to be a page here and was retired on purpose, so there is
+      nothing to redirect you to. The link that sent you here is out of date.
+    </p>
+    <p>What is still published:</p>
+    <ul>
+      {
+        site.sections
+          .filter((s) => s.inNav)
+          .map((s) => (
+            <li>
+              <a href={`/${s.path}/`}>{s.label}</a>
+            </li>
+          ))
+      }
+    </ul>
+  </div>
+
+  <style>
+    .page {
+      padding-block: var(--space-16);
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,176 @@
+---
+/**
+ * The one layout. Header, footer, head, structured data.
+ *
+ * Everything that appears on every page is here rather than repeated, and the
+ * navigation is generated from `site.config.ts` so adding a section is one
+ * edit. A page passes what is *about that page*; it never re-declares the site.
+ */
+import '@fontsource/share/400.css';
+import '@fontsource/share/700.css';
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/600.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import { site } from '../../site.config.ts';
+import { breadcrumbs, crumbsFor, graph, organization, pageTitle, person, website } from '../lib/seo.ts';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Index pages keep the brand suffix; detail pages spend the characters on topic. */
+  suffix?: boolean;
+  /** Extra structured-data nodes for what this page *is*. */
+  jsonLd?: (object | null)[];
+  /** Kept out of search engines, and out of the site's own index with it. */
+  noindex?: boolean;
+  /** The markdown twin of this page, advertised to anything reading without HTML. */
+  markdown?: string;
+}
+
+const { title, description, suffix = false, jsonLd = [], noindex = false, markdown } = Astro.props;
+
+const path = Astro.url.pathname;
+const canonical = new URL(path, site.url).toString();
+const crumbs = crumbsFor(path);
+
+const data = graph(
+  website(),
+  organization(),
+  person(),
+  breadcrumbs(crumbs),
+  ...jsonLd,
+);
+---
+
+<!doctype html>
+<html lang={site.language}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle(title, { suffix })}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={site.locale.replace('-', '_')} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
+    {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
+
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/* is:inline because this is data, not code: Astro must not try to bundle
+        it. `astro check` is kept at 0 errors / 0 warnings / 0 hints, and this
+        is the directive that earns the last zero. */}
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(data)} />
+
+    {
+      /* Repository *variables*, not secrets: both values are visible in the page
+         source anyway, so hiding them would only make them harder to change.
+         Unset means no tag at all, which is what a local build and a fork get. */
+      site.analytics.src && (
+        <script
+          is:inline
+          defer
+          src={site.analytics.src}
+          data-domain={site.analytics.domain}
+        />
+      )
+    }
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="/">{site.name}</a>
+        <nav aria-label="Main">
+          <ul>
+            {
+              site.sections
+                .filter((s) => s.inNav)
+                .map((s) => (
+                  <li>
+                    <a
+                      href={`/${s.path}/`}
+                      aria-current={path.startsWith(`/${s.path}/`) ? 'page' : undefined}
+                    >
+                      {s.label}
+                    </a>
+                  </li>
+                ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>{site.tagline}</p>
+        <p class="muted">
+          © {new Date().getFullYear()} {site.name}. Code
+          <a href="https://github.com/Baasie/weave-it.org">on GitHub</a>.
+        </p>
+      </div>
+    </footer>
+
+    <style>
+      .site-header {
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-bg);
+      }
+      .header-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4) var(--space-8);
+        align-items: baseline;
+        justify-content: space-between;
+        padding-block: var(--space-5);
+      }
+      .brand {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-lg);
+        color: var(--color-primary);
+      }
+      nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-5);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      nav a[aria-current='page'] {
+        border-bottom: 2px solid var(--color-accent);
+      }
+      .site-footer {
+        margin-top: var(--space-16);
+        padding-block: var(--space-8);
+        border-top: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+      .site-footer p {
+        margin: 0 0 var(--space-2);
+      }
+      .muted {
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+      }
+    </style>
+  </body>
+</html>

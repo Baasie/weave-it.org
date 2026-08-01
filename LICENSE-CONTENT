@@ -1,0 +1,44 @@
+# Content licence
+
+The **code** in this repository is MIT — see `LICENSE`. Take it, fork it, build
+your own site with it. That is the half of this repository that is meant to
+travel.
+
+The **content** is not MIT, and the split is deliberate.
+
+> **This is an open decision, not a settled one.** See MIGRATION.md, phase 0.
+> Until it is settled, the conservative position below applies, because it is
+> the only one that can be loosened later without asking 54 posts' worth of
+> readers to unlearn something. A licence can be widened; it cannot be
+> narrowed.
+
+## Everything under `src/content/`
+
+**© Kenny Baas-Schwegler. All rights reserved.**
+
+The blog posts, talk write-ups and training descriptions are the working
+material of a consultancy. They are published to be *read, linked and quoted*,
+and quoting with attribution is fair dealing and needs no permission from
+anyone. Republishing them wholesale is a different thing, and the answer is
+"ask" rather than "no".
+
+This is the one place Weave IT differs sharply from virtualddd.com, whose
+content is CC BY-SA because it is community-authored and meant to be adapted.
+Nothing here is community-authored.
+
+**Answer engines are explicitly welcome**, and `public/robots.txt` says so by
+name. "All rights reserved" is a statement about republication, not about being
+read; a site nobody can find is not protecting anything.
+
+## Images
+
+Photographs, conference pictures, book covers and the Weave IT brand assets are
+**not** covered by either licence. Several are other people's — a conference's
+own photography, a publisher's cover art — and are used here by permission or
+by fair dealing. Ask before reusing any of them.
+
+## Third-party material
+
+Where a page quotes or reproduces somebody else's work — a canvas, a diagram, a
+passage from a book — that material stays under its own licence and the page
+says whose it is. Nothing in this file overrides that.
