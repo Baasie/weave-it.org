@@ -91,6 +91,13 @@ const { tags, allLabel, noun } = Astro.props;
     const status = filter.querySelector<HTMLElement>('.js-filter-status');
     const noun = filter.dataset.noun ?? 'entries';
 
+    // Blocks that sit outside the filtered list and must not survive a filter:
+    // the featured posts on the blog archive, the "coming up" talks. They are
+    // not part of the list the script hides row by row, so without this a
+    // reader who picks a tag is left looking at three articles that do not
+    // carry it — which reads as the filter being broken.
+    const asides = [...document.querySelectorAll<HTMLElement>('.js-filter-hide')];
+
     const apply = (tag: string, push: boolean) => {
       // Tags are normalised to lower case by the sync (src/lib/tags.ts), but a
       // hand-typed or redirected URL is not, so compare case-insensitively
@@ -104,6 +111,8 @@ const { tags, allLabel, noun } = Astro.props;
         entry.hidden = !match;
         if (match) shown += 1;
       }
+
+      for (const aside of asides) aside.hidden = Boolean(want);
 
       for (const chip of chips) {
         const on = (chip.dataset.tag ?? '').toLowerCase() === want;

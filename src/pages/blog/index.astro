@@ -44,7 +44,7 @@ const jsonLd = [
     <div class="wrap">
       {
         featured.length > 0 && (
-          <ul class="grid-cards grid-cards--3 featured" data-test="featured">
+          <ul class="grid-cards grid-cards--3 featured js-filter-hide" data-test="featured">
             {featured.map((entry) => (
               <EntryCard
                 href={`/blog/${entry.id}/`}

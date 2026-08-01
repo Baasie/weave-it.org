@@ -88,9 +88,17 @@ console.log(`  redirected (301) : ${stats.redirected}`);
 console.log(`  gone (410)       : ${stats.gone}`);
 
 if (problems.length) {
+  // Forty is a kindness to whoever is reading a terminal. `--all` is for
+  // `tests/urls.test.mjs`, which has to decide whether *every* unhandled
+  // address is explained by content that is not published yet — and a
+  // truncated list makes that judgement on a sample and calls it a proof.
+  const all = process.argv.includes('--all');
+  const shown = all ? problems : problems.slice(0, 40);
   console.error(`\n${problems.length} problem(s):`);
-  for (const p of problems.slice(0, 40)) console.error(`  ${p.url} — ${p.why}`);
-  if (problems.length > 40) console.error(`  … and ${problems.length - 40} more`);
+  for (const p of shown) console.error(`  ${p.url} — ${p.why}`);
+  if (shown.length < problems.length) {
+    console.error(`  … and ${problems.length - shown.length} more (run with --all to list them)`);
+  }
   process.exit(1);
 }
 console.log('\nall indexed URLs are handled.');

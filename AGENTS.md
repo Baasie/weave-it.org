@@ -28,10 +28,11 @@ here.
    redirected once, or returned as `410 Gone` on purpose. `npm run check:urls`
    is the guard. Never edit `public/.htaccess`; edit its generator.
    See [docs/urls.md](docs/urls.md).
-   *How we know: **machine.** `check:urls` against `dist` reports zero
-   outstanding, and `build.test.mjs` proves every internal link resolves and
-   every one of them ends in a slash. Still missing: a test that the committed
-   `.htaccess` is what the generator writes today.*
+   *How we know: **machine.** `urls.test.mjs` replays `.htaccess` against the
+   inventory, asserts the single `www` hop, and proves the committed file is
+   what the generator writes today; `build.test.mjs` proves every internal link
+   resolves and ends in a slash. `verify-live.mjs` re-checks against the real
+   host, because a simulation is not Apache.*
 3. **The brand is the fixed point.** Layout, copy, components and structure are
    open to improvement. The colours, the logo and the feel are not.
    See [docs/brand-and-code.md](docs/brand-and-code.md).
