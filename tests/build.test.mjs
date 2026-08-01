@@ -21,7 +21,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  DIST, COLLECTIONS, SECTION, pages, meta, attr, markup, graph, expected, isStaging, exists,
+  DIST, COLLECTIONS, SECTION, pages, meta, attr, markup, graph, expected, entries,
+  isStaging, exists,
 } from './helpers.mjs';
 
 let all;
@@ -362,10 +363,7 @@ describe('feeds and machine-readable files', () => {
     }
     // Published only, whichever build this is: the feed is the one surface
     // where "visible on staging" and "sent to subscribers" must not be conflated.
-    const published = COLLECTIONS.includes('posts')
-      ? readdirSync('src/content/posts').filter((f) => f.endsWith('.md'))
-        .filter((f) => /^status:\s*"Published"/m.test(readFileSync(`src/content/posts/${f}`, 'utf8'))).length
-      : 0;
+    const published = entries('posts').filter((e) => e.status === 'Published').length;
     assert.equal((xml.match(/<item>/g) ?? []).length, published,
       'the feed should carry exactly the published posts, on any build');
   });
