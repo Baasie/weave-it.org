@@ -28,15 +28,19 @@ here.
    redirected once, or returned as `410 Gone` on purpose. `npm run check:urls`
    is the guard. Never edit `public/.htaccess`; edit its generator.
    See [docs/urls.md](docs/urls.md).
-   *How we know: **machine, from phase 5.** Until then `check:urls` reports the
-   outstanding count and does not yet block — see MIGRATION.md. That is a
-   deliberate, temporary state and it has an end date.*
+   *How we know: **machine.** `check:urls` against `dist` reports zero
+   outstanding, and `build.test.mjs` proves every internal link resolves and
+   every one of them ends in a slash. Still missing: a test that the committed
+   `.htaccess` is what the generator writes today.*
 3. **The brand is the fixed point.** Layout, copy, components and structure are
    open to improvement. The colours, the logo and the feel are not.
    See [docs/brand-and-code.md](docs/brand-and-code.md).
-   *How we know: **partly, and not yet.** The contrast test is phase 2. Until it
-   exists this rests on you, and the palette is light enough that getting it
-   wrong is easy — read the `--on-brand` note in `tokens.css` first.*
+   *How we know: **machine, partly.** `tests/unit/contrast.test.mjs` measures
+   every text-on-fill pairing in the palette, and `conformance.test.mjs` keeps
+   colour literals out of components. Whether something still **feels** like
+   Weave IT is a person's judgement. Read the `--on-brand` note in `tokens.css`
+   before touching a fill: this palette is light, and getting it wrong looks
+   fine on a screen while measuring 2.4:1.*
 4. **Propose options, then ask.** For anything that changes what a visitor sees,
    work out what the page and the Notion data actually do, name the friction,
    offer options with a recommendation, and let the maintainer decide.
@@ -47,7 +51,9 @@ here.
 5. **Tests select `[data-test]` hooks and `js-*` classes only**, never a styling
    class and never visible copy, so restyling a section cannot break them.
    See [docs/testing.md](docs/testing.md).
-   *How we know: **machine, from phase 6** (`conformance.test.mjs`).*
+   *How we know: **machine.** `conformance.test.mjs` reads the test files and
+   fails on a selector naming a class the stylesheets define, and on a
+   `[data-test]` hook no component emits.*
 6. **Small steps, section by section.** Improvement is opt-in per section, never
    a big-bang rebuild. Sections ship independently.
    *How we know: **a reader.** `review.yml` prints lines added against lines
@@ -60,8 +66,10 @@ here.
    site. Know which you are editing: [docs/template.md](docs/template.md) is the
    line, and a hostname hard-coded into a generic script is how the line stops
    being true without anyone noticing.
-   *How we know: **weakly.** `site.config.ts` makes the right thing easy. Nothing
-   yet fails a build for the wrong one.*
+   *How we know: **machine.** `conformance.test.mjs` asserts that every file
+   [docs/template.md](docs/template.md) names still exists, and that no file it
+   calls generic mentions this site, this host or this person. It moved four
+   workflows out of the generic table the day it was written.*
 
 The team is one person and time is short. The constraint behind every decision
 here is *low ongoing maintenance*.
@@ -74,12 +82,24 @@ must be about code being wrong, never about somebody's writing.
 | Tier | Runs | Fails the deploy? |
 |---|---|---|
 | **Blocking** — contracts, URLs, browser behaviour, conformance | Every push | Yes |
+| **Conformance** — the rules on this page that a machine can read | Every push, inside the blocking suite | Yes |
 | **Content report** — what an editor could improve | Every push | No, `continue-on-error` |
 | **Review** — the diff, against this file | Every push touching code | No — a separate workflow |
 
 **A test an editor can turn red from Notion must never block a deploy.** That
 would make publishing hostage to CI. Assert a relationship ("every published post
 has a page"), never a count, and never name a piece of content.
+
+`tests/conformance.test.mjs` is where a rule from this file becomes executable,
+and every test in it names the rule it enforces. **If you add a rule here,
+either add a test there or write "nobody" beside it** — a rule that sounds
+enforced and is not costs more than an honest habit, because it gets assumed.
+That is not hypothetical: the review skill told every reviewer not to re-check
+the four rules conformance covers, months before the file existed.
+
+The blocking step also refuses to run an empty suite. `node --test` on a glob
+matching no files prints "pass 0" and exits 0, and that is precisely how this
+tier reported success while running nothing at all.
 
 `review.yml` reports and does not block, and that is the design. The reviewer is
 a language model; the standing promise in [docs/pipeline.md](docs/pipeline.md) is

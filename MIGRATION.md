@@ -487,13 +487,33 @@ and that is the drafts, not a regression.
 
 Ported in shape, not verbatim: they assert things about *this* site.
 
+**The blocking tier is real now.** It was not: `deploy.yml` ran
+`node --test "tests/*.test.mjs"`, no file matched, and `node --test` prints
+"pass 0" and exits 0 — so the step reported success on every push while running
+nothing, and this table went on claiming it failed the deploy. The step now
+refuses an empty glob.
+
 - [x] `tests/unit/` — **38 tests, 0.2s, no build.** Contrast over the whole
       palette, the entry-ordering rules, excerpt and date formatting, entity
       decoding and tag spelling. `contrast.test.mjs` asserts *relationships*
       between tokens and never a particular hex, so the brand can still be
       adjusted — what it forbids is an adjustment that makes something
       unreadable
-- [ ] `tests/unit/` — the rest of the pure rules
+- [x] `tests/build.test.mjs` — **34 contract tests** over `dist`: canonicals and
+      the origin they point at, one `<h1>`, OG tags, JSON-LD shapes and
+      breadcrumbs, every internal link and image, the sitemap, error pages, the
+      markdown twins, the feeds, a size ceiling, and the documentation's own
+      links. **Mode-aware**: it applies the site's own visibility rule, so it
+      holds on a 10-page production build and a 79-page staging one
+- [x] `tests/conformance.test.mjs` — **7 tests** making rules 3, 5 and 8
+      executable, including the template seam
+- [ ] `tests/urls.test.mjs` — the committed `.htaccess` is what the generator
+      writes today
+- [ ] `tests/browser.test.mjs` — Playwright: overflow at 360/390px, filtering,
+      JavaScript off, focus rings, and **axe-core** over one page of each shape
+- [ ] `tests/content/` — the reporting tier. Still empty, and still vacuous for
+      the same reason the blocking tier was: `npm run test:content` matches no
+      files and exits 0. It is `continue-on-error`, so this is a smaller lie
 - [ ] `tests/build.test.mjs` — canonicals, one `<h1>`, OG tags, JSON-LD shapes,
       breadcrumbs, internal links, the sitemap, the error pages, a size ceiling
 - [ ] `tests/urls.test.mjs` — replays `.htaccess` against the inventory

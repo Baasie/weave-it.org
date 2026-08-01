@@ -183,6 +183,20 @@ jobs:
 
       - name: Contracts, redirects and browser behaviour
         run: |
+          # `node --test` on a glob that matches nothing prints "pass 0" and
+          # exits 0. That is how this step spent the whole migration reporting
+          # success while running no blocking tests at all: `tests/*.test.mjs`
+          # matched no files, and AGENTS.md's tier table went on saying this
+          # tier fails the deploy.
+          #
+          # A green tick for "there was nothing to check" is worse than a red
+          # one, because it is indistinguishable from "everything passed".
+          for glob in "tests/unit/*.test.mjs" "tests/*.test.mjs"; do
+            compgen -G "$glob" > /dev/null || {
+              echo "::error::No test files match $glob — the suite is empty, not passing."
+              exit 1
+            }
+          done
           npx playwright install --with-deps chromium
           node --import tsx --test "tests/unit/*.test.mjs"
           node --test "tests/*.test.mjs"
@@ -338,6 +352,11 @@ jobs:
           SERVER: ${{ github.server_url }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
+          # Which site this actually was. It used to be the production origin,
+          # written into the payload as a literal — so a staging deploy
+          # announced that weave-it.org had shipped. Same secret the build and
+          # the verification already read.
+          SITE: ${{ secrets.SITE_URL }}
         run: |
           [ -n "$HOOK" ] || { echo "no deploy webhook configured, skipping"; exit 0; }
           # What was built, not what triggered the run — see the `ref` input.
@@ -349,7 +368,8 @@ jobs:
             --arg url "$SERVER/$REPO/commit/$built" \
             --arg changes "$CHANGES" \
             --arg run "$SERVER/$REPO/actions/runs/$RUN_ID" \
-            '{event:"deployed", site:"https://weave-it.org", commit:$commit, commitUrl:$url, changes:$changes, run:$run}' \
+            --arg site "$SITE" \
+            '{event:"deployed", site:$site, commit:$commit, commitUrl:$url, changes:$changes, run:$run}' \
             | curl -sS -o /dev/null -w '%{http_code}' -X POST \
                 -H 'Content-Type: application/json' \
                 -H "X-WeaveIT-Token: $TOKEN" \
