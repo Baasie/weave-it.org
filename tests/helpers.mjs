@@ -20,15 +20,25 @@ export const DIST = 'dist';
 export const isStaging = () =>
   readFileSync(`${DIST}/robots.txt`, 'utf8').startsWith('# Staging.');
 
-/** Front matter of every entry in a collection, as { id, status }. */
-export const entries = (collection) =>
-  readdirSync(`src/content/${collection}`)
+/**
+ * Front matter of every entry in a collection, as { id, status }.
+ *
+ * A collection directory that does not exist is an empty collection, not an
+ * error. Learning journeys has no entries yet — and **git cannot store an empty
+ * directory**, so the folder is present on a machine that has run the sync and
+ * absent in a fresh checkout. This suite passed locally and failed on its first
+ * CI run for exactly that reason.
+ */
+export const entries = (collection) => {
+  const dir = `src/content/${collection}`;
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
     .filter((f) => f.endsWith('.md'))
     .map((f) => ({
       id: f.replace(/\.md$/, ''),
-      status: (readFileSync(`src/content/${collection}/${f}`, 'utf8')
-        .match(/^status:\s*"([^"]*)"/m) ?? [])[1] ?? '',
+      status: (readFileSync(`${dir}/${f}`, 'utf8').match(/^status:\s*"([^"]*)"/m) ?? [])[1] ?? '',
     }));
+};
 
 /**
  * How many entries of a collection this build should have turned into pages.
