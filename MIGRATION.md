@@ -265,8 +265,7 @@ address to keep. They are a **content decision, not a migration one** — read
 them and decide whether they are worth finishing. The book page in particular
 looks like it wants to exist.
 
-**`load` is written and dry-run clean.** It is waiting on one thing: a
-`NOTION_TOKEN`.
+**Done. 69 pages are in Notion**, all as `Status = Idea`.
 
 ```
 posts     25 pages
@@ -275,10 +274,9 @@ training  15 pages
           2,225 blocks total
 ```
 
-- [x] `load` — markdown → Notion blocks, properties from the front matter,
-      re-runnable (it reads existing slugs first and skips them, so a run that
-      dies half way is fixed by running it again rather than by deleting rows)
-- [ ] **Create the integration and run it** — see below
+- [x] `load` — markdown → Notion blocks, properties from the front matter
+- [x] Integration created, four databases shared, load run
+- [x] Two conversion defects found by running it, fixed, and the pages replaced
 
 Everything lands as **`Status = Idea`**. Nothing publishes itself; that is what
 3c is for.
@@ -287,25 +285,47 @@ The six standalone pages are deliberately *not* loaded. Home, consultancy and
 contact become hand-authored `.astro`: a page with one-off layout is code, and
 putting it in Notion gives an editor a body they cannot safely change.
 
-### Getting the token
+### Two limits and one bug, found by running it
 
-Two minutes, and not throwaway work — the CI sync in phase 4 needs the same
-token.
+Worth recording, because none was visible from the documentation and all three
+are the sort of thing that fails quietly.
 
-1. **notion.so/my-integrations** → New internal integration, workspace = yours.
-2. Copy the secret into `local.env` as `NOTION_TOKEN=…` (gitignored), and into
-   the repository secret of the same name.
-3. **Share each of the four databases with it**: open the database → `•••` →
-   Connections → add the integration. Notion grants access per page, so
-   creating the integration is not enough on its own — miss this and the sync
-   sees an empty workspace and reports success.
+- **Notion caps a block's `rich_text` array at 100 elements**, separately from
+  the 2000 characters per element. One training page produced 113 runs and
+  Notion rejected the *whole request*, not the block. Adjacent runs with
+  matching formatting are now merged — which is more faithful anyway, since the
+  tokeniser emitted a run per boundary — and `splitRuns` is the backstop.
+- **Blockquotes were being dismantled.** A WordPress quote is
+  `<blockquote><p>…</p><cite>…</cite></blockquote>`, and the converter handled
+  the blockquote *before* the generic `<p>` rule, so those inner paragraphs
+  later became blank lines and split the quote into a lone `>` and an orphaned
+  paragraph. 23 quotes across 10 pages. The attribution is now a second quoted
+  line instead of a literal `<cite>` tag.
+- **A dry run that could not see existing rows** reported everything as new —
+  the one question it exists to answer. It queries with the token now.
 
-Then:
+The first was caught by the load failing on page 69 of 69; the other two only by
+reading what actually landed. **Read a sample after an import**, not just the
+exit code.
+
+### Re-running it
 
 ```bash
 npx tsx scripts/import-wordpress.ts load --dry-run   # says what it would do
-npx tsx scripts/import-wordpress.ts load             # ~2 minutes, rate-limited
+npx tsx scripts/import-wordpress.ts load             # skips what is already there
+npx tsx scripts/import-wordpress.ts load --replace   # archives and re-creates
 ```
+
+`load` is re-runnable: it reads the slugs already in each database and skips
+them, so a run that dies half way is fixed by running it again rather than by
+deleting rows. That earned its keep immediately — the `rich_text` failure left
+68 of 69 landed, and the re-run created exactly the one that had failed.
+
+**`--replace` discards anything edited in Notion.** It archives the row (to
+Notion's trash, recoverable for 30 days) and creates it fresh, because a page is
+properties *and* an arbitrary number of blocks and reconciling those is far more
+code than re-creating. Safe while the import is still landing; once the
+editorial pass has started, fix the page by hand instead.
 
 ### 3c. Your pass through it
 

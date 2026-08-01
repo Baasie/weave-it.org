@@ -27,6 +27,12 @@
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import dotenv from 'dotenv';
+
+// `local.env` is where the README says the token lives, and it is gitignored.
+// Read here rather than expecting the caller to export it, so the documented
+// workflow is the one that works.
+dotenv.config({ path: 'local.env', quiet: true });
 
 const WP = 'https://weave-it.org/wp-json/wp/v2';
 const OUT = 'wordpress-export';
@@ -100,9 +106,22 @@ function toMarkdown(html: string): string {
   s = s.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/g, '**$2**');
   s = s.replace(/<(em|i)[^>]*>([\s\S]*?)<\/\1>/g, '_$2_');
   s = s.replace(/<code[^>]*>([\s\S]*?)<\/code>/g, '`$1`');
-  s = s.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/g, (_, t: string) =>
-    `\n\n> ${t.replace(/\n+/g, ' ').trim()}\n\n`,
-  );
+  // Blockquotes, before the generic <p> rule and not after it.
+  //
+  // A WordPress quote is `<blockquote><p>…</p><cite>…</cite></blockquote>`, so
+  // handling it first and leaving the inner tags alone meant the later <p> rule
+  // turned them into blank lines — which split the quote into a lone `>` and an
+  // orphaned paragraph. 23 quotes across 10 pages came through that way.
+  // The attribution becomes a second quoted line rather than being dropped.
+  s = s.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/g, (_, t: string) => {
+    const cite = t.match(/<cite[^>]*>([\s\S]*?)<\/cite>/)?.[1]?.trim();
+    const body = t
+      .replace(/<cite[^>]*>[\s\S]*?<\/cite>/g, '')
+      .replace(/<\/?p[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return `\n\n> ${body}${cite ? `\n> — ${cite}` : ''}\n\n`;
+  });
   s = s.replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g, '[$2]($1)');
   s = s.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g, '\n\n![$2]($1)\n\n');
   s = s.replace(/<img[^>]*src="([^"]*)"[^>]*>/g, '\n\n![]($1)\n\n');
@@ -110,7 +129,7 @@ function toMarkdown(html: string): string {
   s = s.replace(/<\/?(ul|ol)[^>]*>/g, '\n');
   s = s.replace(/<p[^>]*>/g, '\n\n').replace(/<\/p>/g, '\n\n');
   s = s.replace(/<br\s*\/?>/g, '  \n');
-  s = s.replace(/<\/?(span|figure|figcaption|section|article|header|footer)[^>]*>/g, '');
+  s = s.replace(/<\/?(span|figure|figcaption|section|article|header|footer|cite)[^>]*>/g, '');
 
   // Entities WordPress emits routinely. Ampersand last, or it re-decodes the
   // ones above into something else entirely.
@@ -339,7 +358,54 @@ function richText(md: string): object[] {
     last = m.index! + m[0].length;
   }
   if (last < md.length) push(md.slice(last));
-  return out.length ? out : [{ type: 'text', text: { content: '' } }];
+
+  // Merge neighbours that carry the same formatting and no link.
+  //
+  // The loop above emits a run per token boundary, so `_a_ b _c_` becomes five
+  // where it means three. Left alone the count balloons, and Notion caps a
+  // block's rich_text array at 100 elements — a separate limit from the 2000
+  // characters per element handled in `push`. Merging is the fix that also
+  // happens to be more faithful; `splitRuns` below is the backstop.
+  const merged: any[] = [];
+  for (const run of out as any[]) {
+    const prev = merged[merged.length - 1];
+    const plain = !run.text.link && !prev?.text?.link;
+    if (
+      prev &&
+      plain &&
+      JSON.stringify(prev.annotations) === JSON.stringify(run.annotations) &&
+      prev.text.content.length + run.text.content.length <= 1900
+    ) {
+      prev.text.content += run.text.content;
+    } else {
+      merged.push(run);
+    }
+  }
+  return merged.length ? merged : [{ type: 'text', text: { content: '' } }];
+}
+
+/**
+ * Notion allows at most 100 rich-text runs in one block.
+ *
+ * A paragraph dense with links can exceed it even after merging — one training
+ * page produced 113 — and Notion rejects the whole request, not the block. So
+ * an over-long block becomes several of the same type. Splitting a paragraph in
+ * two is a visible, harmless edit; losing the page is not.
+ */
+function splitRuns(blocks: any[]): any[] {
+  const out: any[] = [];
+  for (const block of blocks) {
+    const kind = block.type;
+    const runs = block[kind]?.rich_text;
+    if (!Array.isArray(runs) || runs.length <= 100) {
+      out.push(block);
+      continue;
+    }
+    for (let i = 0; i < runs.length; i += 100) {
+      out.push({ type: kind, [kind]: { ...block[kind], rich_text: runs.slice(i, i + 100) } });
+    }
+  }
+  return out;
 }
 
 /** Markdown → Notion blocks. Handles what `toMarkdown` emits, and nothing else. */
@@ -393,7 +459,7 @@ function toBlocks(body: string): object[] {
 
     blocks.push({ type: 'paragraph', paragraph: { rich_text: richText(chunk.replace(/\n/g, ' ')) } });
   }
-  return blocks;
+  return splitRuns(blocks);
 }
 
 /** Properties for a row, from the front matter `extract` wrote. */
@@ -445,6 +511,7 @@ function propertiesFor(collection: string, fm: FrontMatter): Record<string, unkn
  */
 async function load() {
   const dry = process.argv.includes('--dry-run');
+  const replace = process.argv.includes('--replace');
   const only = arg('collection');
 
   const token = process.env.NOTION_TOKEN;
@@ -471,8 +538,12 @@ async function load() {
     }
 
     // What is already there, so a second run is a no-op rather than a mess.
-    const existing = new Set<string>();
-    if (!dry) {
+    //
+    // Queried on a dry run too, whenever there is a token: a dry run that
+    // cannot see the existing rows reports everything as new, which is exactly
+    // the question it is being asked and exactly the answer it would get wrong.
+    const existing = new Map<string, string>(); // slug -> page id
+    if (token) {
       let cursor: string | undefined;
       do {
         const page: any = await (notion as any).dataSources.query({
@@ -481,7 +552,7 @@ async function load() {
         });
         for (const row of page.results) {
           const slug = row.properties?.Slug?.rich_text?.[0]?.plain_text;
-          if (slug) existing.add(slug);
+          if (slug) existing.set(slug, row.id);
         }
         cursor = page.has_more ? page.next_cursor : undefined;
       } while (cursor);
@@ -489,19 +560,39 @@ async function load() {
 
     let created = 0;
     let skipped = 0;
+    let replaced = 0;
     for (const file of files) {
       const { fm, body } = parseFrontMatter(readFileSync(join(OUT, collection, file), 'utf8'));
       const slug = str(fm, 'slug') || file.replace(/\.md$/, '');
-      if (existing.has(slug)) {
+      const already = existing.get(slug);
+      if (already && !replace) {
         skipped++;
         continue;
       }
 
       const blocks = toBlocks(body);
       if (dry) {
-        console.log(`  would create ${collection}/${slug}  (${blocks.length} blocks)`);
+        console.log(
+          `  would ${already ? 'replace' : 'create'} ${collection}/${slug}  (${blocks.length} blocks)`,
+        );
         created++;
+        if (already) replaced++;
         continue;
+      }
+
+      // --replace: archive the existing row and make a fresh one.
+      //
+      // Archiving rather than editing in place because a page is properties
+      // *and* an arbitrary number of blocks, and reconciling blocks one by one
+      // is far more code than re-creating. Archived pages go to Notion's trash,
+      // so a mistake is recoverable for 30 days.
+      //
+      // **It discards anything edited in Notion.** Only safe while the import is
+      // still landing; once the editorial pass has started, fix the page by
+      // hand instead.
+      if (already) {
+        await (notion as any).pages.update({ page_id: already, archived: true });
+        replaced++;
       }
 
       // Notion accepts 100 children on create; the rest are appended.
@@ -517,11 +608,13 @@ async function load() {
         });
       }
       created++;
-      console.log(`  ${collection}/${slug}  (${blocks.length} blocks)`);
+      console.log(`  ${already ? '↻' : '+'} ${collection}/${slug}  (${blocks.length} blocks)`);
       // Notion's published limit is ~3 requests a second, averaged.
       await new Promise((r) => setTimeout(r, 350));
     }
-    console.log(`${collection}: ${created} created, ${skipped} already there\n`);
+    console.log(
+      `${collection}: ${created - replaced} created, ${replaced} replaced, ${skipped} already there\n`,
+    );
   }
 
   if (dry) console.log('Dry run. Nothing was written to Notion.');
@@ -543,7 +636,7 @@ else {
     'usage: tsx scripts/import-wordpress.ts <extract|attachments|load> [options]\n' +
       '  extract      [--type=posts|pages]      WP REST API -> wordpress-export/\n' +
       '  attachments  <export.xml>              -> data/attachment-pages.csv\n' +
-      '  load         [--dry-run] [--collection=posts|talks|training]',
+      '  load         [--dry-run] [--replace] [--collection=posts|talks|training]',
   );
   process.exit(1);
 }
