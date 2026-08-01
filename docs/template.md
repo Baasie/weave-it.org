@@ -38,22 +38,37 @@ silently, months before anybody tries to reuse it.
 
 | File | What it does | Configured by |
 |---|---|---|
-| `.github/workflows/deploy.yml` | Build, test, atomic rsync release, verify, notify | Secrets only |
-| `.github/workflows/sync.yml` | Pull Notion, commit a diff, call the deploy | The collection list in one `for` loop |
-| `.github/workflows/watch.yml` | Weekly: every address, and the certificate | Secrets only |
-| `.github/workflows/review.yml` | Read the diff against the brief | `.claude/skills/review-change/` |
 | `.github/workflows/dependabot-automerge.yml` | Merge a green routine bump | — |
 | `.github/dependabot.yml` | One grouped PR most Mondays | — |
 | `scripts/check-redirects.mjs` | Replay `.htaccess` against the inventory | Reads `data/` |
 | `scripts/verify-live.mjs` | Ask a deployed host about every address | Argument + `data/` |
 | `scripts/prune-dist.mjs` | Drop the originals Astro emits beside its `.webp` | — |
-| `tsconfig.json`, `.gitignore` | — | — |
+| `tsconfig.json` | — | — |
 | `src/styles/global.css` | Reset, base type, focus ring, skip link | Entirely via tokens |
-| `src/lib/markdown-page.ts` | The `.md` twin of every content page | *(phase 4)* |
-| `src/lib/dates.ts`, `excerpt.ts`, `tags.ts`, `filter-url.ts` | Small pure helpers | *(phase 4)* |
+| `src/lib/markdown-twin.ts` | The `.md` twin of every content page | `site.config.ts` |
+| `src/lib/format.ts` | Dates in the site locale, and excerpts | `site.config.ts` |
+| `src/lib/entries.ts` | Ordering and grouping over a list of entries | — |
+| `src/lib/tags.ts` | One spelling per tag | — |
+
+`conformance.test.mjs` asserts both halves of this table: that every file it
+names still exists, and that none of the generic ones mentions this site, this
+host or this person. Rule 8 used to say the seam was held "weakly"; that test is
+what changed it.
 
 **Nearly generic**, and worth understanding rather than copying blindly:
 
+- **`.github/workflows/deploy.yml`, `sync.yml`, `review.yml` and `watch.yml`** — the
+  machinery transfers whole; three things in it do not, and they were listed as
+  "copy as-is" until `conformance.test.mjs` said otherwise.
+  **The `KUALO_*` secret names** describe one hosting company, and a site
+  elsewhere would rename all five. **The sync bot's identity** —
+  `weave-it-sync` / `noreply@weave-it.org` — appears in all three: `sync.yml`
+  sets it, `deploy.yml` checks it before rejecting a hand edit, and
+  `review.yml` skips its commits. Change it in one and the other two stop
+  agreeing, silently, in the direction of "nothing is reviewed". **The
+  `X-WeaveIT-Token` header** names the site to n8n, in all four.
+  None of that is worth parameterising for one site; all of it is worth knowing
+  before copying, which is what this section is for.
 - **`scripts/build-redirects.ts`** — the machinery is generic; the constants at
   the top (`MOVED`, `GONE_PAGES`, `PROJECTS`, `RETIRED`) are the URL history of
   one site and never transfer. Extracting this means extracting the shape and
@@ -81,7 +96,7 @@ silently, months before anybody tries to reuse it.
 | `src/pages/**` | The pages |
 | `src/content.config.ts` | The content model |
 | `data/live-urls.txt` | The URL history of one domain |
-| `public/robots.txt` | Names the sitemap host; the AI-crawler stance is a per-site decision |
+| `src/pages/robots.txt.ts` | Names the sitemap host, and the AI-crawler stance is a per-site decision. A route rather than a static file because staging must serve `Disallow: /` |
 | `public/.htaccess` | **Generated.** Never edited; edit its generator |
 | `AGENTS.md`, `README.md`, `docs/*` | The brief for one project |
 | `LICENSE-CONTENT` | virtualddd.com is CC BY-SA community content; this is a consultancy's own work |

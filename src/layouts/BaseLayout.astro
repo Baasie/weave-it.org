@@ -71,7 +71,15 @@ const data = graph(
     <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
     {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
 
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    {/* Both of these pointed at files that were never added, so every page on
+        the site fetched two 404s. `build.test.mjs` found it by resolving every
+        internal link against `dist/` — which is the whole argument for that
+        test: nothing about a missing favicon is visible while developing.
+
+        PNG rather than ICO. The source is a 512px PNG, sharp cannot write ICO,
+        and a declared `rel="icon"` is what browsers use — the bare
+        `/favicon.ico` request only happens when no icon is declared at all. */}
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     {/* is:inline because this is data, not code: Astro must not try to bundle

@@ -11,6 +11,11 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Per-machine Claude Code settings: a permission allowlist one person built up,
+# not a decision the project made. Ignored here rather than relying on a global
+# ignore, which only exists on the machine that has one.
+.claude/settings.local.json
+
 # environment variables and secrets: local.env holds NOTION_TOKEN
 *.env
 .env.*
