@@ -507,10 +507,13 @@ refuses an empty glob.
       holds on a 10-page production build and a 79-page staging one
 - [x] `tests/conformance.test.mjs` — **7 tests** making rules 3, 5 and 8
       executable, including the template seam
-- [ ] `tests/urls.test.mjs` — the committed `.htaccess` is what the generator
-      writes today
-- [ ] `tests/browser.test.mjs` — Playwright: overflow at 360/390px, filtering,
-      JavaScript off, focus rings, and **axe-core** over one page of each shape
+- [x] `tests/urls.test.mjs` — the URL contract, the single `www` hop, and **the
+      committed `.htaccess` is what the generator writes today**. On a
+      production build the shortfall has to be *exactly* the editorial backlog,
+      so a rule that stopped matching still fails
+- [x] `tests/browser.test.mjs` — Playwright: overflow at 360/390px, the tag
+      filter, JavaScript off, the focus ring, and **axe-core** over one page of
+      each shape. It found that `hidden` never hid anything — see below
 - [ ] `tests/content/` — the reporting tier. Still empty, and still vacuous for
       the same reason the blocking tier was: `npm run test:content` matches no
       files and exits 0. It is `continue-on-error`, so this is a smaller lie

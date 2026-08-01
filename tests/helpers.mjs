@@ -1,6 +1,7 @@
 /** Shared test helpers: read the built site, and know which build it is. */
+import { createServer } from 'node:http';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 
 export const DIST = 'dist';
 
@@ -110,3 +111,36 @@ export const graph = (html) => {
 };
 
 export const exists = (p) => existsSync(`${DIST}${p}`);
+
+/**
+ * Serve `dist/` the way a static host does, so browser tests hit the real build.
+ *
+ * Not `astro dev`: the thing being tested is what will be rsynced to Kualo,
+ * including the pruning and the Pagefind index, neither of which a dev server
+ * has. `trailingSlash: 'always'` is honoured here the same way Apache does it —
+ * a directory URL serves its `index.html`.
+ */
+export function serveDist(port = 4331) {
+  const TYPES = {
+    '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
+    '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon',
+    '.xml': 'application/xml', '.txt': 'text/plain', '.md': 'text/markdown',
+    '.woff2': 'font/woff2', '.woff': 'font/woff', '.json': 'application/json',
+  };
+  const server = createServer((req, res) => {
+    const url = decodeURIComponent((req.url ?? '/').split('?')[0]);
+    let file = join(DIST, url);
+    if (url.endsWith('/')) file = join(file, 'index.html');
+    if (!existsSync(file) || statSync(file).isDirectory()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
+    res.end(readFileSync(file));
+  });
+  return new Promise((resolve) => {
+    server.listen(port, () => resolve({ server, base: `http://localhost:${port}` }));
+  });
+}

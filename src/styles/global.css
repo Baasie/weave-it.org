@@ -136,6 +136,22 @@ img {
   display: block;
 }
 
+/* `hidden` must actually hide.
+ *
+ * The browser's own rule is `[hidden] { display: none }` — a single type
+ * selector, so *any* class that sets `display` beats it. `.card` sets
+ * `display: flex`, which meant the tag filter marked nine cards hidden and all
+ * nine stayed on screen at full size. The filter looked correct from
+ * JavaScript, because the property was set; it was only wrong to look at.
+ *
+ * `!important` because that is the only thing that wins against a component
+ * setting its own `display`, and because there is no case where an element
+ * carrying `hidden` should be visible. `tests/browser.test.mjs` counts what is
+ * on screen rather than what claims to be hidden, which is how this surfaced. */
+[hidden] {
+  display: none !important;
+}
+
 /* Never remove this.
  *
  * The browser default focus ring is a thin dark outline, which on a light
