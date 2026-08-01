@@ -1,0 +1,354 @@
+{
+  "learning-journeys": {},
+  "posts": {
+    "3afa485afafc8108812fd7a0068729b3": {
+      "slug": "be-carefull-using-ui-designs-as-a-visual-during-your-bdd-refinements-2",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "83beaef8874775d6"
+    },
+    "3afa485afafc8115a63fde9a6787b3cb": {
+      "slug": "remote-collaborative-modelling-part-1-check-in",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "8aa6908179a8e7ed"
+    },
+    "3afa485afafc8115b82cdff66347c3ea": {
+      "slug": "heuristics-on-approaching-example-mapping",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "e4f625f29744e95f"
+    },
+    "3afa485afafc8124b024f825d221f855": {
+      "slug": "eventstorming-and-how-to-monitor-domain-events-for-product-management",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "7d172de22caa389c"
+    },
+    "3afa485afafc81269663e4dbf75a116c": {
+      "slug": "combining-domain-driven-design-and-behaviour-driven-development",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "157a3eefbb80ecef"
+    },
+    "3afa485afafc8129aecbd53f6dca3b96": {
+      "slug": "eventstorming-core-concepts-glossary-and-legend",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "814a4f554012ebbe"
+    },
+    "3afa485afafc81329ed4e7cd21306dc9": {
+      "slug": "an-ubiquitous-domain-language-throughout-testing",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "47bc29a0903af581"
+    },
+    "3afa485afafc8143a079da076917dff7": {
+      "slug": "from-eventstorming-to-coddding-2",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "a3ad6b1e8dfe9c37"
+    },
+    "3afa485afafc814ca814ee06645670a2": {
+      "slug": "property-based-testing-in-java-with-junit-quickcheck-part-2-generators",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "6309b0d5145983c5"
+    },
+    "3afa485afafc8159a884e2456f012293": {
+      "slug": "extending-the-bounded-context-canvas-with-bdd-examples",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "6378e84a3de11e88"
+    },
+    "3afa485afafc8164a93df3af9faafb3b": {
+      "slug": "property-based-testing-in-java-with-junit-quickcheck-part-1-the-basics",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "a5a4e9fb1756c2ab"
+    },
+    "3afa485afafc8171ac23d1a0f2c4eb1b": {
+      "slug": "towards-autonomous-aligned-teams",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "9f507f081053698a"
+    },
+    "3afa485afafc818f9a52fc79e8fa7a4d": {
+      "slug": "eventstorming-tools-what-is-in-my-flight-case",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "3ceec058368e5722"
+    },
+    "3afa485afafc81909697c3e72e8f8b12": {
+      "slug": "designing-resilient-bounded-contexts-residuality-theory-ddd",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "bf7eb8ebf47a8752"
+    },
+    "3afa485afafc819d82c2e83c6266d797": {
+      "slug": "eventstorming-the-perfect-wedding",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "0858c835382bc4e8"
+    },
+    "3afa485afafc819e8ef3d2e04642bcfb": {
+      "slug": "cultural-needs-designing-bounded-contexts",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "d4b987670980deed"
+    },
+    "3afa485afafc81b8b323c0a425465880": {
+      "slug": "crossing-the-bounded-context-events-first-the-rest-is-not-needed",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "397c2f66d48c8efb"
+    },
+    "3afa485afafc81bd8505d50d3baab88b": {
+      "slug": "eventstorming-continuous-discovery-beyond-software-modelling",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "9e98f08f063acf92"
+    },
+    "3afa485afafc81bfbd9ed657496dd71d": {
+      "slug": "visualise-coupling-between-contexts-in-big-picture-eventstorming",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "c3b3d295d1e204eb"
+    },
+    "3afa485afafc81e5b0a3e991c8153c10": {
+      "slug": "a-quest-in-finding-the-perfect-eventstorming-backpack",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "fb7fdee6a5d7f7fe"
+    },
+    "3afa485afafc81e88e02dc10e924284a": {
+      "slug": "coach-your-architects-in-agile-architecture",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "32a9463d98b927d8"
+    },
+    "3afa485afafc81e892c4dcc7d398855e": {
+      "slug": "eventstorming-cheat-sheet",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "c84295e72757a709"
+    },
+    "3afa485afafc81f5bf0ff325402e3049": {
+      "slug": "model-exploration-whirlpool-domain-driven-design-the-first-15-years",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "8b254dac10955c0c"
+    },
+    "3afa485afafc81f68d00e98aa540e307": {
+      "slug": "overcoming-additive-bias-software-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "da9052cbf2d37f69"
+    },
+    "3afa485afafc81f9aeacffdf6fc1f50a": {
+      "slug": "making-the-most-out-of-remote-eventstorming",
+      "edited": "2026-08-01T08:04:00.000Z",
+      "hash": "b6937a1192fb6a95"
+    }
+  },
+  "talks": {
+    "3afa485afafc8103b0acfbc200d35a2b": {
+      "slug": "reshaping-cultural-perspectives-in-software-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "89db34ab14006d78"
+    },
+    "3afa485afafc8105a7a7cbac6b90c1c0": {
+      "slug": "how-domain-driven-design-enabled-scaling-a-big-ball-of-mud-product",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "65ae6a300e17d1a7"
+    },
+    "3afa485afafc810aa114c6ee2854520f": {
+      "slug": "debiasing-your-software-design-decision-making",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "7aa57161e31429d0"
+    },
+    "3afa485afafc8112b715cc04c6bef843": {
+      "slug": "domain-driven-design-data-mesh",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "e3033308487bb095"
+    },
+    "3afa485afafc8113bbd7c0ec2c2ffa25": {
+      "slug": "collaborative-software-design-team-cognitive-load",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "c329f10414fade36"
+    },
+    "3afa485afafc811aa5d0d76d6fcd618c": {
+      "slug": "visual-and-collaborative-modelling-2",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "e878e959fbd046c1"
+    },
+    "3afa485afafc81209f93ff6a3899fd76": {
+      "slug": "visual-and-collaborative-modelling",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "48eb59eca976bac1"
+    },
+    "3afa485afafc812891e9ffa9ed3c9d51": {
+      "slug": "effective-software-design-the-role-of-men-in-debugging-patriarchy-in-it",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "91e101f72c0072a6"
+    },
+    "3afa485afafc812f838bea89fd8e5329": {
+      "slug": "facilitating-collaborative-design-decisions",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "932c4e10931e03b8"
+    },
+    "3afa485afafc81338cb0ebfc08c16590": {
+      "slug": "autonomy-is-that-what-we-really-want",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "16462457ba92eaf5"
+    },
+    "3afa485afafc8133bb1bd6ae618bc68a": {
+      "slug": "domain-driven-design-heuristics-for-dealing-with-legacy-software",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "70f451385b154d20"
+    },
+    "3afa485afafc813ab587ccdb2eabd07d": {
+      "slug": "bridging-the-design-gap-how-collaborative-modelling-removes-blockers-to-flow-between-stakeholders-and-teams",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "58da71f2682d0f94"
+    },
+    "3afa485afafc813fa34dce416d4a58b9": {
+      "slug": "technical-leadership-for-architectural-decision-making",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "92a04a0053045c83"
+    },
+    "3afa485afafc8146aa83cbc151e8e1f0": {
+      "slug": "collaborative-software-design-how-to-facilitate-domain-modeling-decisions",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "c94fd827f7ed5598"
+    },
+    "3afa485afafc8166837de0207846ad4f": {
+      "slug": "towards-autonomously-aligned-teams-with-domain-driven-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "c6222b162269231a"
+    },
+    "3afa485afafc816aa14ac96f1189f3f2": {
+      "slug": "does-culture-impact-software-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "c6da8ba5af4fd0b3"
+    },
+    "3afa485afafc816da50dd72726e244ac": {
+      "slug": "navigating-the-future-of-software-development-embracing-collaborative-modelling",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "841c2c5efbabf077"
+    },
+    "3afa485afafc817e9f78f3b4603eab22": {
+      "slug": "how-cognitive-biases-and-ranking-fosters-an-ineffective-architecture-and-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "b66f32d96f8072a1"
+    },
+    "3afa485afafc81989edac2232574b7b2": {
+      "slug": "i-got-trapped-systems-thinking-traps-of-it-teams-and-how-to-battle-them",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "6f1d38e77f6b4257"
+    },
+    "3afa485afafc819a8861dd40072a8c62": {
+      "slug": "eventstorming-continuous-learning-between-multiple-disciplines",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "72111ac8dd68f2fb"
+    },
+    "3afa485afafc81a68742e03b19cdb495": {
+      "slug": "aligned-decentralised-architecture-user-needs-mapping",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "69aeee7eb9aabe4d"
+    },
+    "3afa485afafc81a9976ad684a726cfbc": {
+      "slug": "collaborative-modelling-domain-boundaries",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "3b75538cd3209f3b"
+    },
+    "3afa485afafc81b2b31afee2a0ab7b20": {
+      "slug": "from-eventstorming-to-coddding",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "26d39b0cba41b5a4"
+    },
+    "3afa485afafc81b88664e01001690870": {
+      "slug": "a-quest-at-mapping-domain-driven-design-heuristics",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "b48b6060ebc7abc4"
+    },
+    "3afa485afafc81bc9924fa1d29c2ca55": {
+      "slug": "who-is-actually-making-the-architectural-decisions-right-now-facilitating-architecture-in-an-ai-accelerated-world",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "4e52d0e991b72db5"
+    },
+    "3afa485afafc81e2ba60d1b61a9bbd86": {
+      "slug": "crunching-real-life-stories-with-ddd-eventstorming-and-combining-it-with-bdd-example-mapping",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "543eb95107d2eb9a"
+    },
+    "3afa485afafc81e48d8bcd8dc0f6fdae": {
+      "slug": "how-a-deeper-software-model-enables-breakthroughs-in-product-development",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "a8818d41ec462bd3"
+    },
+    "3afa485afafc81e7a9ead6542ccab392": {
+      "slug": "introduction-to-domain-driven-design-and-collaborative-software-design",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "b32cc89cfc93d232"
+    },
+    "3afa485afafc81fe8c93d01a3d86c5ec": {
+      "slug": "designing-software-for-culture",
+      "edited": "2026-08-01T08:05:00.000Z",
+      "hash": "1dd9b3017b68fc7d"
+    }
+  },
+  "training": {
+    "3afa485afafc811080e6dd87fe7c6872": {
+      "slug": "software-design-architecture-course",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "962061bf139aba2e"
+    },
+    "3afa485afafc811e83f5d181274e1a37": {
+      "slug": "enabling-software-architecture-leaders-course",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "14e09b943225f10e"
+    },
+    "3afa485afafc812782aed86973f9607d": {
+      "slug": "production-ready-domain-driven-design",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "f23cc55e3867e4e5"
+    },
+    "3afa485afafc81318f3ec5b9ea31f97b": {
+      "slug": "domain-driven-design-for-software-architecture",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "508844e37b996bc5"
+    },
+    "3afa485afafc81319b1be68111970605": {
+      "slug": "navigating-conflicts-in-software-architecture-decision-making",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "e2fb16b5abf872ed"
+    },
+    "3afa485afafc8177bed0eed7d6fbb8a7": {
+      "slug": "techlead-fundamentals-training",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "26328912d493cb78"
+    },
+    "3afa485afafc817f8c81db885df7e04b": {
+      "slug": "collaborative-software-design-how-to-facilitate-domain-modelling-decisions",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "3dede676b1f8b93a"
+    },
+    "3afa485afafc8180aa7fffb1ddf05628": {
+      "slug": "domain-driven-design-product-managers",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "9118a6e01e7e2ac5"
+    },
+    "3afa485afafc818ba633f9cdfdc432b5": {
+      "slug": "team-driven-software-architecture-workshop",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "548cb3089b7b7444"
+    },
+    "3afa485afafc81a4948bd4d38e9720bf": {
+      "slug": "applying-domain-driven-design-in-code",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "45d76b542bcf6c14"
+    },
+    "3afa485afafc81ac8b12f35137758fce": {
+      "slug": "integrating-and-testing-event-driven-domain-driven-design-software-architectures",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "bc97478e5c67dfe9"
+    },
+    "3afa485afafc81afbecbf524e61384e5": {
+      "slug": "applying-collaborative-modelling-tools",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "3382a363f1bbefd5"
+    },
+    "3afa485afafc81d0b61fff36a9e6cdd4": {
+      "slug": "model-driven-design-workshop",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "9454506877f73d7d"
+    },
+    "3afa485afafc81f9b82edc3372e131be": {
+      "slug": "disentangling-legacy-software-with-domain-driven-design",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "3e79a828660d31c6"
+    },
+    "3afa485afafc81fb83f3e3512143481d": {
+      "slug": "domain-driven-design-for-software-teams",
+      "edited": "2026-08-01T08:06:00.000Z",
+      "hash": "59f28f105076f502"
+    }
+  }
+}
