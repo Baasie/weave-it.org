@@ -65,7 +65,36 @@ jobs:
 
       - run: npm ci
 
+      # Every other secret in this repository degrades to "skip and say so"
+      # rather than failing — see the note under phase 1 in MIGRATION.md. This
+      # one did not, and it was the only workflow that could fail on a schedule
+      # with nothing wrong: an empty `NOTION_TOKEN` made the sync script exit 1
+      # every hour, on a repository where filling that secret in was still an
+      # open task. A red run that means "not configured yet" trains people to
+      # ignore red runs.
+      #
+      # Skipping the *job* rather than the step, because everything after this
+      # point — the diff, the commit, the deploy it triggers — is downstream of
+      # having actually fetched something.
+      - name: Is there anything to sync from?
+        id: token
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Skipped"
+              echo
+              echo "No \`NOTION_TOKEN\` secret is set, so there is nothing to sync from."
+              echo "Add it at **Settings → Secrets and variables → Actions**, then re-run."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Pull Notion
+        if: steps.token.outputs.ready == 'true'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           FULL: ${{ (github.event.schedule == '17 3 * * *' || inputs.full) && '--full' || '' }}
@@ -77,6 +106,9 @@ jobs:
 
       - name: What changed?
         id: diff
+        # Guarded too, or a skipped sync reports "nothing changed in Notion",
+        # which is a different claim from "we never looked".
+        if: steps.token.outputs.ready == 'true'
         run: |
           # Stage first, and ask the index rather than the working tree.
           # `git diff` cannot see a file git has never heard of, and that is
