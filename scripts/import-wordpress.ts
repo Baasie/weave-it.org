@@ -23,8 +23,9 @@
  *
  *   npx tsx scripts/import-wordpress.ts extract
  *   npx tsx scripts/import-wordpress.ts extract --type=pages
+ *   npx tsx scripts/import-wordpress.ts attachments wordpress-export/<file>.xml
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const WP = 'https://weave-it.org/wp-json/wp/v2';
@@ -207,8 +208,64 @@ async function extract() {
 }
 
 /**
- * Phase 3b. Deliberately not written yet: it needs the three database ids,
- * which need the databases, which need decision 0.1 in MIGRATION.md.
+ * Mine the XML export for what the REST API cannot show.
+ *
+ * The REST API lists what is *published*. The export carries drafts, the media
+ * library and — the one that mattered — the 97 **attachment pages**: a page per
+ * uploaded file, at a root-level slug like `/tech-03/`, in no sitemap, and all
+ * of them live. The first URL inventory missed every one.
+ *
+ * Writes `data/attachment-pages.csv`, which `build-redirects.ts` turns into 97
+ * rules. Frozen once written: WordPress is going away and these addresses are
+ * not going to grow.
+ *
+ * Parsed with regular expressions rather than an XML library on purpose. This
+ * is a one-shot tool reading one known file, the shape of a WXR `<item>` is
+ * fixed, and adding a parser dependency to the site's package.json for a script
+ * that gets deleted is the wrong trade.
+ *
+ *   npx tsx scripts/import-wordpress.ts attachments wordpress-export/<file>.xml
+ */
+function attachments(xmlPath: string) {
+  const xml = readFileSync(xmlPath, 'utf8');
+  const items = xml.split('<item>').slice(1);
+  const pick = (block: string, tag: string) =>
+    block.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`))?.[1]?.trim() ?? '';
+
+  const rows: [string, string][] = [];
+  let drafts = 0;
+  for (const block of items) {
+    const type = pick(block, 'wp:post_type');
+    if (pick(block, 'wp:status') === 'draft' && (type === 'post' || type === 'page')) drafts++;
+    if (type !== 'attachment') continue;
+    const page = pick(block, 'link');
+    const file = pick(block, 'wp:attachment_url');
+    if (!page || !file) continue;
+    // The slug of the attachment *page*, and the path of the file it points at.
+    // There is no derivable relationship between them — `/tech-03/` lives under
+    // `2023/08/` — which is why this has to be data.
+    rows.push([new URL(page).pathname.replace(/^\/|\/$/g, ''), new URL(file).pathname]);
+  }
+  // Plain codepoint order, not localeCompare: this file is committed and a test
+  // compares it, and localeCompare answers differently depending on the
+  // runtime's ICU locale — which would make the file "changed" on a machine
+  // that merely has a different one.
+  rows.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+
+  mkdirSync('data', { recursive: true });
+  writeFileSync(
+    join('data', 'attachment-pages.csv'),
+    'slug,file\n' + rows.map(([s, f]) => `${s},${f}`).join('\n') + '\n',
+  );
+  console.log(`attachments: ${rows.length} page(s) -> data/attachment-pages.csv`);
+  console.log(`  add each as /<slug>/ to data/live-urls.txt, then \`npm run redirects\``);
+  console.log(`  the files they point at belong in public/wp-content/uploads/ — see docs/urls.md`);
+  if (drafts) console.log(`\n${drafts} draft(s) in the export that the REST API never showed. Worth reading.`);
+}
+
+/**
+ * Phase 3b. Deliberately not written yet: it needs the four database ids,
+ * which are now known, and a NOTION_TOKEN with access to them.
  *
  * When it is written, two rules it must keep:
  *   - Everything lands as `Status = Draft`. Nothing publishes itself.
@@ -223,8 +280,17 @@ function load(): never {
 
 const command = process.argv[2];
 if (command === 'extract') await extract();
-else if (command === 'load') load();
+else if (command === 'attachments') {
+  const xml = process.argv[3];
+  if (!xml) {
+    console.error('usage: tsx scripts/import-wordpress.ts attachments <export.xml>');
+    process.exit(1);
+  }
+  attachments(xml);
+} else if (command === 'load') load();
 else {
-  console.error('usage: tsx scripts/import-wordpress.ts <extract|load> [--type=posts|pages]');
+  console.error(
+    'usage: tsx scripts/import-wordpress.ts <extract|attachments|load> [--type=posts|pages]',
+  );
   process.exit(1);
 }

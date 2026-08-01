@@ -32,7 +32,7 @@ Two rules shape most decisions:
 - **The brand is the fixed point.** Layout, copy and structure are open to
   improvement. The visual identity is not up for redesign.
 - **URLs are promises.** The site answers every address the WordPress site
-  answered — 147 of them, many linked from conference pages and other people's
+  answered — 244 of them, many linked from conference pages and other people's
   posts. `npm run check:urls` proves each one is served, redirected once, or
   deliberately Gone.
 

@@ -50,14 +50,26 @@ ls -1dt ~/releases/*/                          # newest first
 ln -sfn ~/releases/<older-sha> ~/weave-it.org
 ```
 
-## The parked WordPress directory is not dead weight
+## The parked WordPress directory keeps the bytes, not the addresses
 
-Its `wp-content/uploads` is what the old site's media URLs point at, and things
-outside this repository still reference them — other people's posts, slide decks,
-Notion pages. This is exactly what caught virtualddd.com: eight photos linked
-from Notion into the old media library, gone the moment the docroot moved.
+This is worth being precise about, because the obvious reading is wrong and it
+was wrong in this file until the XML export proved it.
 
-Do not delete it on the strength of the new site looking fine.
+Parking `~/weave-it.org.wordpress` keeps the **files on disk**. It does *not*
+keep `https://weave-it.org/wp-content/uploads/…` answering: the document root
+is a symlink to the Astro release, so those requests resolve *inside the
+release* and would 404 the moment the symlink moves.
+
+Other people's posts, slide decks and Notion pages link straight into that
+directory, and 97 attachment-page redirects land in it. So the media the site
+still owes the web is **committed under `public/wp-content/uploads/`** — 103
+files, 8.2 MB — and is served by the new site directly. See
+[urls.md](urls.md).
+
+Keep the parked directory anyway. It holds the ~700 generated thumbnail sizes
+that are not committed, and it is the only copy of anything the inventory
+missed. Do not delete it on the strength of the new site looking fine — but do
+not rely on it to serve a URL, either.
 
 ## Certificates
 

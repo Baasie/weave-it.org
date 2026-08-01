@@ -97,6 +97,36 @@ function recordedRules(): { from: string; kind: string; to: string }[] {
     });
 }
 
+/**
+ * The 97 attachment pages: root-level slug → the file it redirects to.
+ *
+ * Committed as data rather than derived, because there is no derivable
+ * relationship between the two — `/tech-03/` points at
+ * `/wp-content/uploads/2023/08/tech-03.jpg`, and only the WordPress database
+ * knew that. `data/attachment-pages.csv` is generated once from the XML export
+ * by `import-wordpress.ts extract`, and is then frozen: WordPress is going away
+ * and these addresses are not going to grow.
+ */
+function attachments(): Record<string, string> {
+  let text = '';
+  try {
+    text = readFileSync('data/attachment-pages.csv', 'utf8');
+  } catch {
+    return {}; // the export has not been mined yet
+  }
+  return Object.fromEntries(
+    text
+      .trim()
+      .split('\n')
+      .slice(1)
+      .filter(Boolean)
+      .map((line) => {
+        const [slug, file] = line.split(',');
+        return [slug, file];
+      }),
+  );
+}
+
 /** Slugs the build actually produces, so a rule can be checked against reality. */
 function slugsIn(collection: string): Set<string> {
   try {
@@ -199,15 +229,36 @@ for (const [from, to] of Object.entries(PROJECTS)) {
 }
 L.push('RewriteRule ^project/?$ /talks/ [R=301,L]');
 
-section('7. WordPress machinery — Gone');
+section('7. Attachment pages');
+// WordPress publishes a page per uploaded file, at a *root-level* slug:
+// `/tech-03/`, `/head-1/`, `/logo_weaveit_fc/`. There are 97 of them and not one
+// is in the sitemap, which is why the first inventory missed them entirely — the
+// XML export is what found them.
+//
+// Yoast currently answers each with a 301 to the file itself, and that is the
+// behaviour kept here rather than replaced: every one of these is live today,
+// and a 410 would break whatever links to them for no gain. The rule is written
+// per file rather than as a pattern because the slug and the upload path share
+// no derivable relationship — `/tech-03/` lives under `2023/08/`.
+for (const [slug, file] of Object.entries(attachments())) {
+  L.push(`RewriteRule ^${esc(slug)}/?$ ${file} [R=301,L]`);
+}
+
+section('8. WordPress machinery — Gone');
 // Addresses that only ever existed because the site ran WordPress. They are in
 // the inventory because they answered 200, not because anyone wanted them.
 for (const p of ['wp-json', 'wp-content/plugins', 'xmlrpc.php', 'wp-login.php']) {
   L.push(`RewriteRule ^${esc(p)} - [G,L]`);
 }
-L.push('# wp-content/uploads is deliberately absent: the parked WordPress');
-L.push('# directory still serves the media those addresses point at, and things');
-L.push('# outside this repository still reference them. See docs/operations.md.');
+// `wp-content/uploads` is deliberately NOT here, and must not be: the redirects
+// above land in it, and other people's posts link straight into it.
+//
+// It is also not served by the parked WordPress directory, which is what this
+// comment claimed until the export proved otherwise. The document root is a
+// symlink to the Astro release, so a request for `/wp-content/uploads/x.png`
+// resolves *inside the release* and would 404 — the parked directory keeps the
+// bytes on disk, not the addresses alive. The files are committed under
+// `public/wp-content/uploads/` for that reason. See docs/urls.md.
 
 if (Object.keys(MOVED).length) {
   section('8. Pages that moved');

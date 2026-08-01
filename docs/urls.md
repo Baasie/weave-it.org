@@ -16,15 +16,15 @@ results, and none of that is under our control. That contract is worth more than
 any code in this repository.
 
 `data/live-urls.txt` is the list. It was taken from the Yoast sitemaps and the
-WordPress REST API on 2026-07-31, and it is **not yet complete** — see "Topping
-up the inventory" below.
+WordPress REST API on 2026-07-31, then extended from the **XML export** on
+2026-08-01, and it is still **not complete** — see "Topping up the inventory".
 
 | Handling | Count | Meaning |
 |---|---|---|
 | Served | 75 | The page exists at that address — 54 posts and 21 pages |
-| Redirected | 71 | One hop, to a page that exists — 57 tags, 2 categories, 2 project, 4 feeds, 6 pagination |
+| Redirected | 168 | One hop — 97 attachment pages, 57 tags, 2 categories, 2 project, 4 feeds, 6 pagination |
 | Gone | 1 | `/author/admin-2/`, a default-username artefact nobody meant to publish |
-| **Total** | **147** | |
+| **Total** | **244** | |
 
 Those are the *intended* numbers. `npm run check:urls` prints the real ones, and
 during the migration the gap between them is the to-do list. It reported 143
@@ -51,6 +51,46 @@ Only WordPress *machinery* needs redirecting:
   address.
 - **The `project` custom post type.** Used once in 2023 and abandoned. Its one
   entry duplicates a talk, so it points at the talk.
+- **Attachment pages** — 97 of them, and the reason this section is not shorter.
+  See below.
+
+## Attachment pages, and why the first inventory missed all 97
+
+WordPress publishes a page per uploaded file, at a **root-level** slug:
+`/tech-03/`, `/head-1/`, `/logo_weaveit_fc/`. None is in any sitemap and none is
+in the REST API's list of pages, so the first inventory — built from exactly
+those two sources — did not contain a single one. The XML export is what found
+them, which is the whole argument for having taken one.
+
+Every one is live, and Yoast answers each with a **301 to the file itself**.
+That behaviour is kept rather than replaced: a `410` would break whatever links
+to them and gain nothing.
+
+The rules are generated from `data/attachment-pages.csv`, which is data and not
+a pattern, because the slug and the upload path share no derivable
+relationship — `/tech-03/` lives under `2023/08/`. Regenerate it with:
+
+```bash
+npx tsx scripts/import-wordpress.ts attachments wordpress-export/<file>.xml
+```
+
+**The files those redirects land on are committed**, under
+`public/wp-content/uploads/`: 103 files, 8.2 MB. This is a compatibility layer,
+not the site's own imagery — the site's images come from Notion into `_assets/`.
+
+It has to be committed because parking the WordPress directory does *not* keep
+`/wp-content/uploads/…` answering. The document root becomes a symlink to the
+Astro release, so those requests resolve inside the release. The parked
+directory keeps the bytes; only shipping the files keeps the addresses. See
+[operations.md](operations.md).
+
+Five URLs referenced from post bodies already 404 on the live WordPress site.
+They are broken today, so nothing is owed on them, and they are not in the
+inventory.
+
+The remaining ~700 generated thumbnail sizes are **not** committed. Only six are
+referenced from any surviving content, and shipping 700 files against six known
+uses is the wrong trade — if one turns up in the logs later, add it then.
 
 Compare virtualddd.com, which inherited 967 addresses across a renamed section, a
 retired video library and eight team pages, and needed several hundred rules. If

@@ -32,7 +32,8 @@ Measured against the live site on 2026-07-31, from its sitemaps and its
 | Tag archives | 57 | 301 → `/blog/?tag=<x>` |
 | Category archives | 2 | 301 → `/blog/` and `/talks/` |
 | Media items | 97 | Downloaded into Notion, then into `_assets/` by the sync |
-| **Inherited addresses** | **147** | The URL contract. `data/live-urls.txt` |
+| Attachment pages | 97 | 301 → the file, as Yoast does today. Found only in the XML export |
+| **Inherited addresses** | **244** | The URL contract. `data/live-urls.txt` |
 
 **Learning journeys are new.** They have no WordPress ancestor, inherit no
 addresses, and are therefore the one section free to be designed rather than
@@ -100,7 +101,8 @@ Kualo at the same time as moving 75 pages.
 - [x] `BaseLayout` with canonical, OG, breadcrumbs, JSON-LD, skip link, focus ring
 - [x] Holding home page, branded `404` and `410`
 - [x] `public/robots.txt` — AI crawlers allowed by name, and why
-- [x] The URL inventory: 147 addresses in `data/live-urls.txt`
+- [x] The URL inventory: 244 addresses in `data/live-urls.txt`
+- [x] The 97 attachment pages handled, and the 103 media files they need committed
 - [x] `scripts/build-redirects.ts` → `public/.htaccess`, and `check-redirects.mjs` to prove it
 - [x] `scripts/verify-live.mjs` — the check only a real host can answer
 - [x] Workflows: deploy, sync, watch, review, dependabot + automerge
@@ -248,6 +250,21 @@ talks are a load; the 21 Divi pages are writing. The extractor names every
 suspect file at the end of its run rather than leaving them to be discovered one
 at a time.
 
+### Two drafts the REST API never showed
+
+The export carries unpublished work. Both of these are substantial, and neither
+was visible to anything built on the REST API:
+
+| | Words | Note |
+|---|---|---|
+| **Page: "Book Collaborative Software Design"** | ~16 kB of HTML | A landing page for the book, slug `book-collaborative-software-design`, drafted 2023-10-11 and never published |
+| **Post: "Identifying the Key Stakeholders for Collaborative Modeling in Domain-Driven Design"** | ~9.5 kB of HTML | Drafted 2023-11-01, **no slug** — so it never had an address and owes nothing to the URL contract |
+
+Neither is in `data/live-urls.txt`, correctly: an unpublished page has no
+address to keep. They are a **content decision, not a migration one** — read
+them and decide whether they are worth finishing. The book page in particular
+looks like it wants to exist.
+
 - [ ] **`load`** — phase 3b proper. Not written yet: it needs the four database
       ids (now known) and a `NOTION_TOKEN` with access to them. Two rules it
       must keep: everything lands as `Status = Idea`, and images are *uploaded*
@@ -284,7 +301,7 @@ part — see [docs/template.md](docs/template.md).
 
 The scoreboard: `npm run build && npm run check:urls`.
 
-- [ ] Every one of the 147 addresses served, redirected once, or `410 Gone`
+- [ ] Every one of the 244 addresses served, redirected once, or `410 Gone`
 - [ ] Decision 0.4 applied: anything retired gets a `GONE_PAGES` line, never
       silence
 - [ ] `data/live-urls.txt` topped up from **Google Search Console** and the
@@ -316,7 +333,7 @@ page"), never a count, and never name a piece of content.
 
 ## Phase 7 — cutover
 
-- [ ] Full `verify:live` against staging, all 147 addresses
+- [ ] Full `verify:live` against staging, all 244 addresses
 - [ ] `mv` the WordPress docroot aside, `ln -sfn` the release in
 - [ ] Point `KUALO_PATH` and `SITE_URL` at production
 - [ ] `node scripts/verify-live.mjs https://weave-it.org --all` within the hour
@@ -375,10 +392,11 @@ something:
 
 5. **Decision 0.3** — the content licence.
 6. **Decision 0.4** — which of the eight pre-2019 posts are worth carrying.
+7. **The two drafts** in the export (phase 3b) — worth finishing, or let go?
 
 **Not in this plan, and worth naming**
 
-7. **The Weave IT content already scattered around Notion.** It is not in the
+8. **The Weave IT content already scattered around Notion.** It is not in the
    four databases and is not synced to anything. Merging it wants its own pass
    with you deciding what supersedes what — say when, and it becomes a phase.
 
@@ -390,5 +408,5 @@ something:
   staging path.
 - Rewriting your copy. The import carries it across; the editing is yours, and
   phase 3c is where it happens.
-- Changing any published address. Every one of the 147 is kept, redirected once,
+- Changing any published address. Every one of the 244 is kept, redirected once,
   or retired by an explicit decision of yours.

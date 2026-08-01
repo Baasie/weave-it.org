@@ -6,15 +6,21 @@ Committed inputs that the build reads, and the files the sync writes back.
 | File | What it is |
 |---|---|
 | `live-urls.txt` | The URL contract: every public address this site promises to answer. `npm run check:urls` proves each is served, redirected once, or `410 Gone`. |
+| `attachment-pages.csv` | The 97 WordPress attachment pages — a root-level slug per uploaded file — and the file each redirects to. Generated once from the XML export by `import-wordpress.ts attachments`, then frozen: WordPress is going away and these will not grow. |
 | `retired-urls.csv` | **Generated.** Written by the sync when a slug is renamed or a page is retired in Notion. `build-redirects.ts` folds it into the `.htaccess`, so the run that breaks a URL is the run that keeps the promise. |
 | `sync-state.json` | **Generated.** What the last sync saw, per page: the slug, Notion's `last_edited_time` and a digest of the body written. It is what makes the sync incremental and what notices a generated file edited by hand. |
 | `sync-alerts.json` | **Generated.** What the last sync wants a person to decide. Committed on purpose — `sync.yml` raises an alert only when this file's own diff says it is new, so an ignored or uncommitted copy means no alert is ever raised. Resolving something empties it. |
 
 ## live-urls.txt
 
-Taken from the Yoast sitemaps and the WordPress REST API on 2026-07-31: 147
-addresses, of which 54 are posts, 21 pages, 57 tag archives and the rest
-WordPress machinery.
+Taken from the Yoast sitemaps and the WordPress REST API on 2026-07-31, then
+extended from the XML export on 2026-08-01: **244** addresses, of which 54 are
+posts, 21 pages, 97 attachment pages, 57 tag archives and the rest WordPress
+machinery.
+
+The 97 attachment pages are the argument for taking an export at all. They are
+in no sitemap and not in the REST API's page list, so the first inventory — built
+from exactly those two sources — contained none of them, and all 97 are live.
 
 **It is not yet complete.** The sitemap knows what WordPress currently
 *publishes*, not what people have *linked to*. Phase 5 of

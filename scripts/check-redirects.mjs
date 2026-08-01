@@ -39,8 +39,19 @@ for (const line of htaccess.split('\n')) {
   });
 }
 
+/**
+ * Is this address answered by something in the build?
+ *
+ * Three shapes, and the third is easy to forget: a redirect target need not be
+ * a *page*. The 97 attachment-page rules land on image files under
+ * `/wp-content/uploads/`, which are real files in `dist` and are exactly as
+ * served as an `index.html` is. Checking only for pages reported every one of
+ * them as broken.
+ */
 const served = (path) =>
-  existsSync(`dist${path}index.html`) || existsSync(`dist${path.replace(/\/$/, '')}.html`);
+  existsSync(`dist${path}index.html`) ||
+  existsSync(`dist${path.replace(/\/$/, '')}.html`) ||
+  (/\.[a-z0-9]+$/i.test(path) && existsSync(`dist${path}`));
 
 const stats = { served: 0, redirected: 0, gone: 0 };
 const problems = [];
