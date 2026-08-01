@@ -1,0 +1,100 @@
+---
+/**
+ * The blog archive. Also the landing point for 57 redirected tag archives and
+ * two category archives — see TagFilter.astro for what `?tag=` has to do.
+ *
+ * The live page leads with a three-slide carousel and two olive cards. The
+ * carousel is not carried across: it hides two of its three posts behind a
+ * timer, its captions are white over an unscrimmed photograph, and it is the
+ * one component on the site that needs JavaScript to show content rather than
+ * to filter it. The same three posts are featured here, all visible at once.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import ContactBand from '../../components/ContactBand.astro';
+import EntryCard from '../../components/EntryCard.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import { posts, tagOptions, isDraft } from '../../lib/collections.ts';
+import { collectionPage } from '../../lib/seo.ts';
+import { excerpt, formatDate } from '../../lib/format.ts';
+
+const entries = await posts();
+const featured = entries.slice(0, 3);
+const tags = tagOptions(entries);
+
+const title = 'Blog';
+const description =
+  'Writing on collaborative software design, Domain-Driven Design, EventStorming ' +
+  'and the decisions teams make together.';
+
+const jsonLd = [
+  collectionPage({
+    path: '/blog/',
+    name: title,
+    description,
+    items: entries.map((e) => ({ title: e.data.title, path: `/blog/${e.id}/` })),
+  }),
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <PageHeader title="Blog" lead={description} />
+
+  <section class="band band--sage" data-test="blog-archive">
+    <div class="wrap">
+      {
+        featured.length > 0 && (
+          <ul class="grid-cards grid-cards--3 featured" data-test="featured">
+            {featured.map((entry) => (
+              <EntryCard
+                href={`/blog/${entry.id}/`}
+                title={entry.data.title}
+                meta={entry.data.published ? formatDate(entry.data.published) : undefined}
+                excerpt={excerpt(entry.body, entry.data.seoDescription, 180)}
+                badge={isDraft(entry) ? entry.data.status : undefined}
+                badgeKind="draft"
+                variant="feature"
+              />
+            ))}
+          </ul>
+        )
+      }
+
+      <TagFilter tags={tags} allLabel="All posts" noun="posts" />
+
+      {
+        entries.length === 0 ? (
+          <p class="empty" data-test="empty">Nothing published here yet.</p>
+        ) : (
+          /* Every post, including the three featured above. The filter has to
+             be able to reach all of them, and a reader who picks a tag should
+             not find that three posts are missing from the results because
+             they happened to be the newest. */
+          <ul class="grid-cards grid-cards--3 js-entry-list" data-test="entry-list">
+            {entries.map((entry) => (
+              <EntryCard
+                href={`/blog/${entry.id}/`}
+                title={entry.data.title}
+                meta={entry.data.published ? formatDate(entry.data.published) : undefined}
+                excerpt={excerpt(entry.body, entry.data.seoDescription)}
+                tags={entry.data.tags}
+                badge={isDraft(entry) ? entry.data.status : undefined}
+                badgeKind="draft"
+                tagBase="/blog/"
+                variant="soft"
+              />
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+    .featured {
+      margin-bottom: var(--space-16);
+    }
+  </style>
+</BaseLayout>

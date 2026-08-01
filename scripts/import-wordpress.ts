@@ -92,13 +92,40 @@ async function termNames(taxonomy: string): Promise<Map<number, string>> {
 function toMarkdown(html: string): string {
   let s = html;
 
-  // Divi wraps everything in nested layout divs that carry no meaning once the
-  // page is prose. Strip the wrappers, keep what was inside them.
-  s = s.replace(/<div[^>]*class="[^"]*et_pb_[^"]*"[^>]*>/g, '\n');
-  s = s.replace(/<\/div>/g, '\n');
-
+  // Whole subtrees that are furniture, not content, removed before anything
+  // else looks at them. A Divi contact form is the one that matters: it carries
+  // a `_wpnonce` and an action URL, and none of it means anything once the page
+  // is prose.
   s = s.replace(/<script[\s\S]*?<\/script>/g, '');
   s = s.replace(/<style[\s\S]*?<\/style>/g, '');
+  s = s.replace(/<noscript[\s\S]*?<\/noscript>/g, '');
+  s = s.replace(/<form[\s\S]*?<\/form>/g, '');
+  s = s.replace(/<(input|button|label|select|textarea)[^>]*>/g, '');
+
+  // **Embeds are content.** A `wp-block-embed` wraps an iframe, and those
+  // iframes are the talk recordings and the slide decks — the single most
+  // valuable thing on a talk page. Turned into a bare URL on its own line,
+  // which Notion renders as an embed and the site can turn back into one.
+  // Stripping the div without doing this first threw them away.
+  s = s.replace(/<iframe[^>]*\ssrc="([^"]+)"[^>]*>[\s\S]*?<\/iframe>/g, (_, src: string) => {
+    const url = src.startsWith('//') ? `https:${src}` : src;
+    return `\n\n${url}\n\n`;
+  });
+
+  // Divi shortcodes, which are square brackets rather than HTML and so were
+  // untouched by everything above. Only one page stores its layout this way
+  // rather than as rendered HTML — the tech lead training — but that is a
+  // training page, and `[et_pb_text line_height="1.7em"]` in the middle of a
+  // course description is not something to leave for a person to pick out.
+  s = s.replace(/\[\/?(?:et_pb|dipl|vc)_[^\]]*\]/g, '\n');
+
+  // Every remaining div, whatever its class. The original rule named only
+  // `et_pb_`, which left WordPress's own block markup (`wp-block-spacer`,
+  // `wp-block-columns`), a Divi timeline plugin's `dipl_*` wrappers and the
+  // sharing widgets behind — raw HTML in 54 of 69 pages. A div carries no
+  // meaning in prose, so there is nothing to be selective about.
+  s = s.replace(/<div[^>]*>/g, '\n');
+  s = s.replace(/<\/div>/g, '\n');
 
   s = s.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/g, (_, n: string, t: string) =>
     `\n\n${'#'.repeat(Number(n))} ${t.trim()}\n\n`,
@@ -148,6 +175,19 @@ function toMarkdown(html: string): string {
     [/&amp;/g, '&'],
   ];
   for (const [re, to] of entities) s = s.replace(re, to);
+
+  // Anything still wearing angle brackets. By this point every tag that
+  // *meant* something has been converted, and what is left is unpaired markup
+  // the pairing rules above could not match — a `<strong>` whose `</strong>`
+  // never arrived, a stray `<li>`. Thirty-two of them across 75 files.
+  //
+  // The text between them is kept; only the brackets go. Done last, and only
+  // last: run earlier this would eat the tags the conversions depend on.
+  //
+  // `&lt;`/`&gt;` have already been decoded above, so a real angle bracket in
+  // prose — "<< Back to all workshops" — is bare by now and survives, because
+  // this only matches something that looks like a tag.
+  s = s.replace(/<\/?[a-z][a-z0-9]*\b[^>]*>/gi, '');
 
   return s.replace(/\n{3,}/g, '\n\n').trim();
 }

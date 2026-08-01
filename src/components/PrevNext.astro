@@ -1,0 +1,83 @@
+---
+/**
+ * Previous / next links at the foot of a detail page.
+ *
+ * The live site labels both of these "TALK" on every page type, including blog
+ * posts — so a reader at the bottom of an article is offered a "previous talk"
+ * that is in fact a post. The label is a prop here for that reason.
+ *
+ * Each link carries the destination's title rather than only a direction: "next"
+ * on its own tells a reader nothing about whether they want to go there, and it
+ * is the sort of link a screen-reader user meets out of context.
+ */
+interface Props {
+  label: string;
+  prev?: { href: string; title: string };
+  next?: { href: string; title: string };
+}
+
+const { label, prev, next } = Astro.props;
+---
+
+{
+  (prev || next) && (
+    <nav class="prevnext" aria-label={`Previous and next ${label.toLowerCase()}`} data-test="prevnext">
+      {prev ? (
+        <a class="prevnext__link prevnext__link--prev" href={prev.href} rel="prev">
+          <span class="prevnext__dir">← Previous {label.toLowerCase()}</span>
+          <span class="prevnext__title">{prev.title}</span>
+        </a>
+      ) : (
+        <span />
+      )}
+
+      {next && (
+        <a class="prevnext__link prevnext__link--next" href={next.href} rel="next">
+          <span class="prevnext__dir">Next {label.toLowerCase()} →</span>
+          <span class="prevnext__title">{next.title}</span>
+        </a>
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .prevnext {
+    display: grid;
+    gap: var(--space-6);
+    margin-top: var(--space-12);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--color-border);
+  }
+  @media (min-width: 640px) {
+    .prevnext {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-10);
+    }
+  }
+  .prevnext__link {
+    display: block;
+    text-decoration: none;
+  }
+  .prevnext__link--next {
+    text-align: right;
+  }
+  .prevnext__dir {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--color-text);
+  }
+  .prevnext__title {
+    display: block;
+    margin-top: var(--space-1);
+    font-family: var(--font-heading);
+    font-size: var(--text-lg);
+    color: var(--color-primary-ink);
+  }
+  .prevnext__link:hover .prevnext__title {
+    text-decoration: underline;
+  }
+</style>

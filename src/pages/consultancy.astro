@@ -1,0 +1,190 @@
+---
+/**
+ * `/consultancy/` — hand-authored, and deliberately not in Notion.
+ *
+ * A page with one-off layout is code (MIGRATION.md phase 3b): putting it in
+ * Notion would hand an editor a body they cannot safely change.
+ *
+ * Follows the live page band for band — title, "Book me for consultancy",
+ * "Type of work" on teal, the two engagement types, the contact band. The copy
+ * is carried across unedited apart from two typos the export preserved
+ * faithfully ("proficiant", and a bold marker that opened and never closed).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { media } from '../lib/media.ts';
+import PageHeader from '../components/PageHeader.astro';
+import BookMeBand from '../components/BookMeBand.astro';
+import ContactBand from '../components/ContactBand.astro';
+import { site } from '../../site.config.ts';
+import { abs } from '../lib/seo.ts';
+
+const title = 'Consultancy';
+const description =
+  'Long-term engagements, design workshops and micro-consultancy in software ' +
+  'architecture, collaborative modelling and Domain-Driven Design.';
+
+/** The list that is the middle of the live page. */
+const work = [
+  {
+    name: 'Interim roles',
+    detail:
+      'Tech Lead, Principal Engineer, Staff Engineer, Engineering Manager, ' +
+      'IT Architect (domain, solution, software).',
+  },
+  {
+    name: 'Facilitation of collaborative software design sessions',
+    detail:
+      'Working with engineers and stakeholders in sessions like Wardley Mapping, ' +
+      'EventStorming, Example Mapping, Domain Storytelling and Team Topologies.',
+  },
+  { name: 'Software architecture enablement', detail: 'Empowering your teams in architectural practices.' },
+  { name: 'Architecture kick-start', detail: 'Initiating the architecture for a new product or project.' },
+  { name: 'Domain analysis', detail: 'Identifying domains, subdomains and value streams.' },
+  { name: 'Legacy system refactoring', detail: 'Untangling and improving legacy software systems.' },
+  { name: 'Software landscape assessment', detail: 'Evaluating your current software infrastructure.' },
+  { name: 'Coaching and mentoring', detail: 'Guidance and support for IT leaders and engineers.' },
+];
+
+/**
+ * `ProfessionalService` rather than a bare `WebPage`: this is the page that
+ * says what is for sale, and it is the only one on the site where that is the
+ * whole point. It refers to the existing `Person` and `Organization` nodes by
+ * `@id` rather than describing them again.
+ */
+const jsonLd = [
+  {
+    '@type': 'ProfessionalService',
+    '@id': abs('/consultancy/'),
+    url: abs('/consultancy/'),
+    name: `${site.name} consultancy`,
+    description,
+    provider: { '@id': abs('/#organization') },
+    employee: { '@id': abs('/#person') },
+    areaServed: site.contact.area,
+    email: site.contact.email,
+    telephone: site.contact.phone,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Type of work',
+      itemListElement: work.map((w) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', name: w.name, description: w.detail },
+      })),
+    },
+  },
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <PageHeader title="Consultancy" />
+
+  <BookMeBand
+    cta="Book me for consultancy"
+    image={media.consultancy}
+    wordmark="WeaveIT Consultancy"
+    wordmarkTone="moss"
+  >
+    <p>
+      Whether you are looking for a long-term engagement or a shorter, transformative one,
+      I offer a diverse range of consultancy services tailored to your needs. From enabling
+      software architecture capabilities and revamping legacy systems to assessing current
+      software landscapes and restructuring your IT organisation, I am here to catalyse your
+      organisation.
+    </p>
+  </BookMeBand>
+
+  <section class="band band--teal" data-test="work">
+    <div class="wrap">
+      <h2 class="display display--on-colour">Type of work</h2>
+      {/* A description list, not a bulleted list: every item is a name and what
+          that name means, and that is what `dl` is for. */}
+      <dl class="work">
+        {
+          work.map((w) => (
+            <div class="work__item">
+              <dt>{w.name}</dt>
+              <dd>{w.detail}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p class="work__note">
+        I am proficient in Java, C#, React and Vue, and have worked with teams in other
+        languages including Ruby on Rails and Node.js.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--teal engagements-band" data-test="engagements">
+    <div class="wrap engagements duo">
+      <section>
+        <h2 class="band-heading">Long-term engagements</h2>
+        <p>
+          Are you grappling with a legacy system that is hard to change, while still having
+          to ship new features? Building a new product and unsure how it fits the environment
+          you already have? Is your architecture convoluted and slow to adapt to what the
+          business and your customers ask for?
+        </p>
+        <p>
+          In a long-term engagement I work with your organisation for several days a week
+          over several months to a year. That is long enough to run a series of design
+          sessions and get deep into the context of your business and your software
+          landscape. From there I coach your teams and give hands-on technical guidance, so
+          the software becomes more flexible and keeps evolving. By the end, your teams can
+          handle the architecture without me.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="band-heading">Workshops and micro-consultancy</h2>
+        <p>
+          Looking to sharpen your IT strategy and future-proof your architecture? Interested
+          in a more modern approach to software development? Need to restructure your
+          software and your teams for a better flow of work? Or unsure whether collaborative
+          software design is even feasible where you are?
+        </p>
+        <p>
+          I run tailored software design workshops, either as one-off sessions or spread over
+          a period, aimed at a specific problem in your architecture. They are designed to
+          leave you able to carry on alone. If you want more afterwards, micro-consultancy
+          lets you buy hours for follow-up sessions.
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+    .work {
+      display: grid;
+      gap: var(--space-6);
+      margin: 0 0 var(--space-10);
+    }
+    @media (min-width: 800px) {
+      .work {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-8) var(--space-12);
+      }
+    }
+    .work__item dt {
+      font-family: var(--font-heading);
+      font-size: var(--text-lg);
+      color: var(--on-colour);
+    }
+    .work__item dd {
+      margin: var(--space-1) 0 0;
+    }
+    .work__note {
+      max-width: var(--content-width);
+      margin: 0;
+    }
+
+    /* The second teal band runs straight on from the first, so it loses its top
+       padding — two bands of the same colour with a gap between them reads as a
+       mistake rather than as a division. */
+    .engagements-band {
+      padding-top: 0;
+    }
+  </style>
+</BaseLayout>

@@ -12,7 +12,8 @@ import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/600.css';
 import '../styles/tokens.css';
 import '../styles/global.css';
-import { site } from '../../site.config.ts';
+import '../styles/patterns.css';
+import { PRODUCTION_URL, site } from '../../site.config.ts';
 import { breadcrumbs, crumbsFor, graph, organization, pageTitle, person, website } from '../lib/seo.ts';
 
 interface Props {
@@ -29,6 +30,12 @@ interface Props {
 }
 
 const { title, description, suffix = false, jsonLd = [], noindex = false, markdown } = Astro.props;
+
+// Staging is never indexable, whatever the page asked for. It serves drafts and
+// duplicates production, and `robots.txt` alone does not settle it: that file
+// asks a crawler not to fetch a URL, and a URL it already knows about can still
+// be listed without being fetched. This is the half that says "do not list it".
+const hideFromSearch = noindex || site.isStaging;
 
 const path = Astro.url.pathname;
 const canonical = new URL(path, site.url).toString();
@@ -51,7 +58,7 @@ const data = graph(
     <title>{pageTitle(title, { suffix })}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {noindex && <meta name="robots" content="noindex, follow" />}
+    {hideFromSearch && <meta name="robots" content="noindex, follow" />}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
@@ -90,11 +97,51 @@ const data = graph(
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
+    {
+      /* Says out loud what the URL only implies. Staging carries unpublished
+         drafts, so anyone landing here from a shared link — or from a search
+         result that predates the noindex — needs to know that what they are
+         reading is not published and may never be. */
+      site.isStaging && (
+        <p class="staging-banner" data-test="staging-banner">
+          <strong>Staging.</strong> This is a preview of the new site and includes
+          unpublished drafts. The live site is <a href={PRODUCTION_URL}>weave-it.org</a>.
+        </p>
+      )
+    }
+
+    {/* The teal utility strip above the header. Social links only — it exists
+        to put the brand colour at the very top of the page, and the icons are
+        what it has to carry. */}
+    <div class="utility-bar">
+      <div class="wrap utility-inner">
+        <ul class="utility-links">
+          {
+            site.author.links.map((l) => (
+              <li>
+                <a href={l.url} rel="me">
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+
     <header class="site-header">
       <div class="wrap header-inner">
-        <a class="brand" href="/">{site.name}</a>
+        <a class="brand" href="/" aria-label={`${site.name} — home`}>
+          {/* The wordmark carries the name, so the link's own label says it
+              instead and the image is decorative. Announcing both reads the
+              brand twice. */}
+          <img src="/logo-weaveit.png" alt="" width="200" height="149" />
+        </a>
         <nav aria-label="Main">
           <ul>
+            <li>
+              <a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
+            </li>
             {
               site.sections
                 .filter((s) => s.inNav)
@@ -119,57 +166,181 @@ const data = graph(
     </main>
 
     <footer class="site-footer">
-      <div class="wrap">
-        <p>{site.tagline}</p>
-        <p class="muted">
-          © {new Date().getFullYear()} {site.name}. Code
-          <a href="https://github.com/Baasie/weave-it.org">on GitHub</a>.
-        </p>
+      <div class="wrap footer-inner">
+        <img class="footer-logo" src="/logo-weaveit-white.png" alt="" width="180" height="134" />
+
+        <div class="footer-right">
+          <ul class="footer-links" data-test="footer-socials">
+            <li><a href="/">Home</a></li>
+            {
+              site.sections
+                .filter((s) => s.inNav)
+                .map((s) => (
+                  <li>
+                    <a href={`/${s.path}/`}>{s.label}</a>
+                  </li>
+                ))
+            }
+          </ul>
+
+          <ul class="footer-links footer-links--social">
+            {
+              site.author.links.map((l) => (
+                <li>
+                  {/* `rel="me"` is what lets a Mastodon profile verify that this
+                      site is the same person. It only works from a link the
+                      profile also points back at. */}
+                  <a href={l.url} rel="me">
+                    {l.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          <p class="muted">
+            {/* Explicit spacing: JSX drops the whitespace at a line break, and
+                this read "Codeon GitHub". */}
+            © {new Date().getFullYear()} {site.name}. Brand and web design by Art of Design.
+            Code{' '}
+            <a href="https://github.com/Baasie/weave-it.org">on GitHub</a>.
+          </p>
+        </div>
       </div>
     </footer>
 
     <style>
-      .site-header {
-        border-bottom: 1px solid var(--color-border);
-        background: var(--color-bg);
+      /* Olive fill, ink text. Never white on this — it measures 2.37:1 and a
+         warning nobody can read is not a warning. See tokens.css. */
+      .staging-banner {
+        margin: 0;
+        padding: var(--space-3) var(--space-5);
+        background: var(--color-accent);
+        color: var(--on-brand);
+        font-size: var(--text-sm);
+        text-align: center;
       }
-      .header-inner {
+      .staging-banner a {
+        color: var(--on-brand);
+      }
+      /* The teal strip above everything. */
+      .utility-bar {
+        background: var(--color-primary);
+      }
+      .utility-inner {
         display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-4) var(--space-8);
-        align-items: baseline;
-        justify-content: space-between;
-        padding-block: var(--space-5);
+        justify-content: flex-end;
+        padding-block: var(--space-2);
       }
-      .brand {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: var(--text-lg);
-        color: var(--color-primary);
-      }
-      nav ul {
+      .utility-links {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-5);
         list-style: none;
         margin: 0;
         padding: 0;
+        font-size: var(--text-sm);
       }
+      .utility-links a {
+        color: var(--on-colour); /* 4.64:1 on the teal */
+      }
+
+      /* The header is the same sage as the page: no border, because the teal
+         strip above it is the edge. */
+      .site-header {
+        background: var(--color-bg);
+      }
+      .header-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4) var(--space-8);
+        align-items: center;
+        justify-content: space-between;
+        padding-block: var(--space-3);
+      }
+      .brand img {
+        width: 150px;
+        height: auto;
+      }
+      nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-6);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      /* Uppercase, letter-spaced Poppins — measured off the live nav. */
+      nav a {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--color-heading);
+      }
+      /* The live site marks the current page with the brand green, which is
+         2.11:1 on the sage — colour alone, and unreadable colour at that. The
+         darker green carries the text and the underline does the marking, so
+         it does not depend on seeing the hue at all. */
       nav a[aria-current='page'] {
-        border-bottom: 2px solid var(--color-accent);
+        color: var(--color-moss-ink);
+        border-bottom: 2px solid var(--color-moss-ink);
       }
+
       .site-footer {
-        margin-top: var(--space-16);
-        padding-block: var(--space-8);
-        border-top: 1px solid var(--color-border);
-        background: var(--color-surface);
+        padding-block: var(--space-12);
+        background: var(--color-primary);
+        color: var(--on-colour);
+      }
+      .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-8);
+        align-items: center;
+        justify-content: space-between;
+      }
+      .footer-logo {
+        width: 180px;
+        height: auto;
+      }
+      .footer-right {
+        margin-left: auto;
+        text-align: right;
       }
       .site-footer p {
-        margin: 0 0 var(--space-2);
+        margin: 0;
       }
-      .muted {
-        color: var(--color-text-muted);
+      .site-footer a {
+        color: var(--on-colour);
+      }
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--space-2) var(--space-5);
+        list-style: none;
+        margin: 0 0 var(--space-3);
+        padding: 0;
+      }
+      .footer-links--social {
         font-size: var(--text-sm);
+      }
+      /* Full white, not `--on-colour-muted`. The teal tops out at 4.64:1
+         against pure white, so any transparency at all drops this line below
+         4.5:1 — it measured 4.1:1. On this band, "quieter" has to be size. */
+      .muted {
+        color: var(--on-colour);
+        font-size: var(--text-sm);
+      }
+
+      @media (max-width: 799.98px) {
+        .footer-inner,
+        .footer-right {
+          text-align: left;
+        }
+        .footer-links {
+          justify-content: flex-start;
+        }
       }
     </style>
   </body>

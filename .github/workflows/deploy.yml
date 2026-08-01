@@ -139,13 +139,22 @@ jobs:
       - name: Types
         run: npx astro check
 
-      # Repository *variables*, not secrets: both values are visible in the page
-      # source of every page, so hiding them would only make them harder to
-      # change. Unset means no analytics tag at all, which is what a fork gets.
+      # Repository *variables*, not secrets: both analytics values are visible
+      # in the page source of every page, so hiding them would only make them
+      # harder to change. Unset means no analytics tag at all, which is what a
+      # fork gets.
+      #
+      # `SITE_URL` decides far more than the canonical tag. Anything that is not
+      # the production origin is a staging build, and a staging build serves
+      # unpublished drafts, disallows every crawler and carries a banner saying
+      # so — see site.config.ts. Unset means production, which is the safe
+      # default: the mistake it permits is "staging looks like production",
+      # never "the drafts shipped".
       - name: Build
         env:
           PUBLIC_ANALYTICS_SRC: ${{ vars.PUBLIC_ANALYTICS_SRC }}
           PUBLIC_ANALYTICS_DOMAIN: ${{ vars.PUBLIC_ANALYTICS_DOMAIN }}
+          SITE_URL: ${{ secrets.SITE_URL }}
         run: npm run build
 
       - name: Contracts, redirects and browser behaviour

@@ -1,0 +1,112 @@
+---
+/**
+ * The teal contact band that closes most pages.
+ *
+ * On the live site this identical block sits at the foot of the home page,
+ * consultancy, training, talks, blog and the course pages — six copies of one
+ * thing, which is exactly what a component is for. It is *not* on the blog post
+ * or talk detail pages, so it is opted into rather than baked into the layout.
+ *
+ * The live version's right-hand half is a contact form. A static site cannot
+ * process one without a third party's endpoint, uptime and privacy policy — see
+ * contact.astro — so this carries the same two facts the form collected and
+ * points them at the same person.
+ */
+import { site } from '../../site.config.ts';
+---
+
+<section class="band band--teal" data-test="contact-band">
+  <div class="wrap contact-band">
+    {/* Ink on the olive, never white: white here is 2.37:1, and this is the
+        defect the brand decision says to fix rather than reproduce. */}
+    <div class="follow">
+      <h2 class="follow__title">Follow me on socials</h2>
+      <ul class="follow__links">
+        {
+          site.author.links.map((l) => (
+            <li>
+              <a href={l.url} rel="me">
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="contact-card">
+      <h2 class="contact-card__title">Contact</h2>
+      <p>
+        Consultancy, training, or a talk at your conference — the fastest answer usually
+        comes from putting a call in the diary.
+      </p>
+      <p class="contact-card__actions">
+        <a class="btn" href={site.contact.scheduling}>Schedule a call</a>
+      </p>
+      <p>
+        Or email <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact-band {
+    display: grid;
+    gap: var(--space-10);
+    align-items: stretch;
+  }
+  @media (min-width: 800px) {
+    .contact-band {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .follow {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-10);
+    background: var(--color-accent);
+    color: var(--on-brand);
+  }
+  .follow__title {
+    margin: 0 0 var(--space-6);
+    font-family: var(--font-body);
+    font-size: var(--text-3xl);
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--on-brand);
+  }
+  .follow__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .follow__links a {
+    color: var(--on-brand);
+    text-decoration: underline;
+  }
+  .contact-card {
+    padding: var(--space-10);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+  .contact-card__title {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-heading);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-h2);
+    color: var(--color-bark);
+  }
+  /* `:not(.btn)` because the button sits on the olive and must keep its ink;
+     teal on olive is 2.89:1. */
+  .contact-card a:not(.btn) {
+    color: var(--color-primary-ink);
+  }
+  .contact-card__actions {
+    margin-block: var(--space-6);
+  }
+</style>

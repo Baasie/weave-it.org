@@ -1,0 +1,127 @@
+---
+/**
+ * `/contact/` — hand-authored, like `/consultancy/`.
+ *
+ * Follows the live page: a title, the area panel, then three brand-coloured
+ * action tiles, then the shared contact band. Two deliberate departures:
+ *
+ * **The tiles carry words.** On the live page two of the three are an icon and
+ * nothing else — a phone glyph and an envelope glyph, no text, no label. There
+ * is no way to know what they do without clicking, and nothing at all for a
+ * screen reader. Each tile here says what it is and where it goes.
+ *
+ * **There is no form.** A static site cannot process one without a third-party
+ * endpoint, which means somebody else's uptime, spam handling and privacy
+ * policy, for a page whose job is to hand over an email address. `mailto:` and
+ * `tel:` need none of that and cannot break.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import ContactBand from '../components/ContactBand.astro';
+import { site } from '../../site.config.ts';
+import { abs } from '../lib/seo.ts';
+
+const title = 'Contact';
+const description = `Get in touch with ${site.author.name} — ${site.contact.area}.`;
+
+const jsonLd = [
+  {
+    '@type': 'ContactPage',
+    '@id': abs('/contact/'),
+    url: abs('/contact/'),
+    name: title,
+    description,
+    about: { '@id': abs('/#person') },
+    mainEntity: {
+      '@type': 'ContactPoint',
+      contactType: 'Business enquiries',
+      email: site.contact.email,
+      telephone: site.contact.phone,
+      areaServed: site.contact.area,
+      availableLanguage: ['en', 'nl'],
+    },
+  },
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <PageHeader title="Contact me" />
+
+  <section class="band band--sage contact-page">
+    <div class="wrap">
+      <div class="area" data-test="area">
+        <p class="area__label">Area</p>
+        <p class="area__value">{site.contact.area}</p>
+      </div>
+
+      <ul class="tile-grid ways" data-test="ways">
+        <li class="tile">
+          <h2 class="tile__title">
+            <a href={site.contact.scheduling}>Schedule a call</a>
+          </h2>
+          <p class="tile__meta">Thirty minutes, no preparation needed</p>
+        </li>
+        <li class="tile">
+          <h2 class="tile__title">
+            <a href={`tel:${site.contact.phone}`}>Call me</a>
+          </h2>
+          <p class="tile__meta">{site.contact.phoneLabel}</p>
+        </li>
+        <li class="tile">
+          <h2 class="tile__title">
+            <a href={`mailto:${site.contact.email}`}>Send an email</a>
+          </h2>
+          <p class="tile__meta">{site.contact.email}</p>
+        </li>
+      </ul>
+
+      <h2 class="display elsewhere__heading">Elsewhere</h2>
+      <ul class="chip-row" data-test="socials">
+        {
+          site.author.links.map((l) => (
+            <li>
+              <a class="chip" href={l.url} rel="me">
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <ContactBand />
+
+  <style>
+    .area {
+      max-width: 34rem;
+      margin: 0 0 var(--space-12) auto;
+      padding: var(--space-8);
+      background: var(--color-moss);
+      color: var(--on-brand);
+    }
+    .area__label {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      /* Ink, not the live page's brown — brown on this green is 1.87:1, the
+         worst pairing on the site. The label is already distinguished from the
+         value by being small, spaced and uppercase, so it loses nothing. */
+      color: var(--on-brand);
+    }
+    .area__value {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: var(--text-2xl);
+    }
+
+    .ways {
+      margin-bottom: var(--space-16);
+    }
+    .elsewhere__heading {
+      margin-bottom: var(--space-5);
+    }
+  </style>
+</BaseLayout>

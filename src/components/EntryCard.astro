@@ -1,0 +1,89 @@
+---
+/**
+ * One entry in a section index. Post, talk or course — the same card.
+ *
+ * Deliberately one component rather than three: the three sections differ in
+ * what goes in the `meta` line and nothing else, and three near-identical cards
+ * is three places to fix a focus bug. What is genuinely per-section is composed
+ * by the caller and passed in as a string.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  href: string;
+  title: string;
+  /** The one-line fact under the title: a date, a venue, a duration. */
+  meta?: string;
+  excerpt?: string;
+  tags?: string[];
+  image?: ImageMetadata;
+  /** "Upcoming", or "Draft" for something visible only under `astro dev`. */
+  badge?: string;
+  badgeKind?: 'default' | 'draft';
+  /** The section index this card links its tags into: `/blog/`, `/talks/`. */
+  tagBase?: string;
+  /**
+   * Which of the three card treatments this is.
+   *
+   * `plain` is the white card, `outline` the olive-ruled one used where a grid
+   * sits on the sage, `feature` the solid olive one at the top of an archive.
+   * All three are defined in patterns.css — the variant only picks a class, so
+   * a fourth treatment is a stylesheet change and not a component change.
+   */
+  variant?: 'plain' | 'outline' | 'feature' | 'soft';
+}
+
+const {
+  href,
+  title,
+  meta,
+  excerpt,
+  tags = [],
+  image,
+  badge,
+  badgeKind = 'default',
+  tagBase,
+  variant = 'plain',
+} = Astro.props;
+
+const classes = ['card', variant !== 'plain' && `card--${variant}`, 'js-entry']
+  .filter(Boolean)
+  .join(' ');
+---
+
+<li class={classes} data-test="entry" data-tags={tags.join('|')}>
+  {
+    image && (
+      <div class="card__media">
+        {/* Decorative here: the card's own title is the accessible name, so
+            announcing the image would read the entry twice.
+
+            Width only, never width *and* height. Notion covers are whatever
+            shape the editor uploaded — several are portrait book jackets — and
+            giving Astro both dimensions makes it resize to that exact box and
+            squash them. The 16/9 crop is CSS, where it belongs. */}
+        <Image src={image} alt="" width={Math.min(640, image.width)} loading="lazy" />
+      </div>
+    )
+  }
+  <div class="card__body">
+    {badge && <p><span class={`badge${badgeKind === 'draft' ? ' badge--draft' : ''}`}>{badge}</span></p>}
+    <h3 class="card__title"><a href={href}>{title}</a></h3>
+    {meta && <p class="card__meta">{meta}</p>}
+    {excerpt && <p class="card__excerpt">{excerpt}</p>}
+    {
+      tags.length > 0 && tagBase && (
+        <ul class="chip-row">
+          {tags.slice(0, 3).map((t) => (
+            <li>
+              <a class="chip" href={`${tagBase}?tag=${encodeURIComponent(t)}`}>
+                {t}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</li>

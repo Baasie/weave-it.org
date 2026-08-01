@@ -1,0 +1,65 @@
+---
+/**
+ * Learning journeys.
+ *
+ * The one section with no WordPress ancestor, so it inherits no addresses and
+ * owes nothing to the URL contract — it is free to be designed rather than
+ * migrated (MIGRATION.md). There are none in Notion yet, so what this page most
+ * needs to do today is render its empty state honestly rather than 404.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryCard from '../../components/EntryCard.astro';
+import { journeys, isDraft } from '../../lib/collections.ts';
+import { collectionPage } from '../../lib/seo.ts';
+import { excerpt } from '../../lib/format.ts';
+
+const entries = await journeys();
+
+const title = 'Learning journeys';
+const description =
+  'Routes through the material: where to start, what to read and which workshop ' +
+  'comes next, depending on where you are now.';
+
+const jsonLd = [
+  collectionPage({
+    path: '/learning-journeys/',
+    name: title,
+    description,
+    items: entries.map((e) => ({ title: e.data.title, path: `/learning-journeys/${e.id}/` })),
+  }),
+];
+---
+
+<BaseLayout title={title} description={description} suffix jsonLd={jsonLd}>
+  <div class="hero-band">
+    <div class="wrap">
+      <h1 class="display">Learning journeys</h1>
+      <p class="lead">{description}</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    {
+      entries.length === 0 ? (
+        <p class="empty" data-test="empty">
+          The first journeys are being written. In the meantime, the <a href="/training/">workshops</a>
+          and the <a href="/blog/">blog</a> are where the material lives.
+        </p>
+      ) : (
+        <ul class="grid-cards js-entry-list" data-test="entry-list">
+          {entries.map((entry) => (
+            <EntryCard
+              href={`/learning-journeys/${entry.id}/`}
+              title={entry.data.title}
+              excerpt={excerpt(entry.body, entry.data.summary ?? entry.data.seoDescription)}
+              tags={entry.data.tags}
+              image={entry.data.featuredImage}
+              badge={isDraft(entry) ? entry.data.status : undefined}
+              badgeKind="draft"
+            />
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</BaseLayout>
