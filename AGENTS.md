@@ -22,8 +22,13 @@ here.
 1. **Notion is the source of truth.** Everything under `src/content/` is
    generated and never hand-edited. CI fails a push that touches it from anyone
    but the sync. See [docs/pipeline.md](docs/pipeline.md).
-   *How we know: **machine.** `deploy.yml` rejects the push, CODEOWNERS puts the
-   maintainer on the PR, and the sync refetches any body whose digest changed.*
+   *How we know: **machine.** `deploy.yml` rejects the push — by asking who
+   authored the commits that touched `src/content`, not who pushed last — and
+   the sync refetches any body whose digest changed.*
+   *`CODEOWNERS` is **not** part of this, whatever it looks like. It routes a
+   review request to the maintainer, and on a one-person repository that is the
+   author reviewing the author. It stays for the day there is a second pair of
+   hands; until then, counting it would be counting a check nobody performs.*
 2. **URLs are promises.** Every address the WordPress site answered is served,
    redirected once, or returned as `410 Gone` on purpose. `npm run check:urls`
    is the guard. Never edit `public/.htaccess`; edit its generator.
