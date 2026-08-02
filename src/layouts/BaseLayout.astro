@@ -145,8 +145,22 @@ const data = graph(
               brand twice. */}
           <img src="/logo-weaveit.png" alt="" width="200" height="149" />
         </a>
+        {/* Hidden in the markup and revealed by the script, so a reader without
+            JavaScript never meets a button that does nothing. The nav below is
+            a plain list until something collapses it — see the script. */}
+        <button
+          class="nav-toggle js-nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          hidden
+        >
+          <span class="nav-toggle__bars" aria-hidden="true"></span>
+          Menu
+        </button>
+
         <nav aria-label="Main">
-          <ul>
+          <ul id="site-nav">
             <li>
               <a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
             </li>
@@ -295,6 +309,80 @@ const data = graph(
         border-bottom: 2px solid var(--color-moss-ink);
       }
 
+      /* The menu button ------------------------------------------------
+       *
+       * Seven nav items wrapped to three lines on a 360px phone: a 286px
+       * header on an 800px viewport, with the page starting 52% of the way
+       * down. This collapses it.
+       *
+       * **The collapse is the enhancement, not the nav.** The markup is a
+       * plain list; the script adds `data-nav` and only then does any of the
+       * CSS below apply. With JavaScript off the list stays exactly as it
+       * was — long, but complete and reachable, which a hidden menu behind a
+       * dead button would not be.
+       */
+      .nav-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border: 2px solid var(--color-primary);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--color-primary-ink);
+        font-family: var(--font-body);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      /* Three bars, drawn rather than shipped as an icon file. */
+      .nav-toggle__bars,
+      .nav-toggle__bars::before,
+      .nav-toggle__bars::after {
+        display: block;
+        width: 1.25rem;
+        height: 2px;
+        background: currentColor;
+      }
+      .nav-toggle__bars {
+        position: relative;
+      }
+      .nav-toggle__bars::before,
+      .nav-toggle__bars::after {
+        content: '';
+        position: absolute;
+        left: 0;
+      }
+      .nav-toggle__bars::before {
+        top: -6px;
+      }
+      .nav-toggle__bars::after {
+        top: 6px;
+      }
+
+      @media (min-width: 800px) {
+        /* Never on a wide screen, even once the script has run. */
+        .nav-toggle {
+          display: none;
+        }
+      }
+
+      @media (max-width: 799.98px) {
+        .site-header[data-nav] nav {
+          flex-basis: 100%;
+        }
+        .site-header[data-nav='closed'] nav {
+          display: none;
+        }
+        .site-header[data-nav] nav ul {
+          flex-direction: column;
+          gap: var(--space-4);
+          padding-block: var(--space-5);
+        }
+      }
+
       .site-footer {
         padding-block: var(--space-12);
         background: var(--color-primary);
@@ -351,5 +439,61 @@ const data = graph(
         }
       }
     </style>
+
+    <script>
+      /**
+       * Collapse the navigation on a narrow screen.
+       *
+       * Progressive enhancement in the literal sense: the markup ships a
+       * complete nav and a hidden button, and this is what turns the pair into
+       * a menu. Nothing here *reveals* content — with the script absent the
+       * list is simply already open, which is why the no-JavaScript browser
+       * test still finds every nav link.
+       */
+      const header = document.querySelector<HTMLElement>('.site-header');
+      const toggle = document.querySelector<HTMLButtonElement>('.js-nav-toggle');
+      const nav = header?.querySelector('nav');
+
+      if (header && toggle && nav) {
+        // Matches the 800px layout breakpoint in tokens.css. CSS cannot read a
+        // custom property inside a media query and neither can this, so the
+        // number is written in both places and noted in both.
+        const narrow = window.matchMedia('(max-width: 799.98px)');
+
+        const setOpen = (open: boolean) => {
+          header.dataset.nav = open ? 'open' : 'closed';
+          toggle.setAttribute('aria-expanded', String(open));
+        };
+
+        const sync = () => {
+          if (narrow.matches) {
+            toggle.hidden = false;
+            // Collapsed on arrival. Re-reading the current state rather than
+            // forcing it shut means rotating a phone does not close a menu
+            // somebody just opened.
+            if (!header.dataset.nav) setOpen(false);
+          } else {
+            toggle.hidden = true;
+            // Leave no state behind: on a wide screen the CSS above must be
+            // the only thing deciding, or a resize can strand the nav hidden.
+            delete header.dataset.nav;
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        };
+
+        toggle.addEventListener('click', () => setOpen(header.dataset.nav !== 'open'));
+
+        // Escape closes it and returns the focus to the button that opened it,
+        // which is where a keyboard user expects to be.
+        header.addEventListener('keydown', (event) => {
+          if (event.key !== 'Escape' || header.dataset.nav !== 'open') return;
+          setOpen(false);
+          toggle.focus();
+        });
+
+        narrow.addEventListener('change', sync);
+        sync();
+      }
+    </script>
   </body>
 </html>

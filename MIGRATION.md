@@ -514,9 +514,11 @@ refuses an empty glob.
 - [x] `tests/browser.test.mjs` — Playwright: overflow at 360/390px, the tag
       filter, JavaScript off, the focus ring, and **axe-core** over one page of
       each shape. It found that `hidden` never hid anything — see below
-- [ ] `tests/content/` — the reporting tier. Still empty, and still vacuous for
-      the same reason the blocking tier was: `npm run test:content` matches no
-      files and exits 0. It is `continue-on-error`, so this is a smaller lie
+- [x] `tests/content/` — the reporting tier, 10 checks. **Expect it red**: it is
+      the phase 3c backlog written down. Today it names 23 posts and 11 talks
+      with no cover, all 15 courses missing a duration and outcomes, 29 talks
+      with no event, 17 bodies linking to weave-it.org absolutely, 15 with a
+      Divi back-link still in them, and two pairs of pages sharing a title
 - [ ] `tests/build.test.mjs` — canonicals, one `<h1>`, OG tags, JSON-LD shapes,
       breadcrumbs, internal links, the sitemap, the error pages, a size ceiling
 - [ ] `tests/urls.test.mjs` — replays `.htaccess` against the inventory

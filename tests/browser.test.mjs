@@ -89,6 +89,41 @@ describe('layout', () => {
     });
   }
 
+  test('the navigation collapses on a phone, and opens on demand', async () => {
+    // Seven nav items wrapped to three lines: a 286px header on an 800px
+    // viewport, with the page itself starting 52% of the way down. The header
+    // should be a strip, not a screen.
+    await withPage(async (page) => {
+      await page.goto(`${base}/blog/`, { waitUntil: 'networkidle' });
+      const height = () => page.evaluate(() =>
+        Math.round(document.querySelector('header').getBoundingClientRect().height));
+
+      assert.ok(await height() < 200, `the collapsed header is ${await height()}px tall`);
+      assert.equal(await visible(page, 'header nav a'), 0, 'the nav is not collapsed');
+
+      const toggle = page.locator('.js-nav-toggle');
+      assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+      await toggle.click();
+      assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+      assert.ok(await visible(page, 'header nav a') >= 5, 'opening the menu revealed nothing');
+
+      // Escape closes it and puts the focus back where it started, which is
+      // where a keyboard user expects to be.
+      await page.keyboard.press('Escape');
+      assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+      assert.ok(await toggle.evaluate((el) => el === document.activeElement),
+        'Escape closed the menu but dropped the focus');
+    }, { viewport: { width: 360, height: 800 } });
+  });
+
+  test('the menu button is not on a wide screen', async () => {
+    await withPage(async (page) => {
+      await page.goto(`${base}/blog/`, { waitUntil: 'networkidle' });
+      assert.equal(await visible(page, '.js-nav-toggle'), 0, 'the menu button is on a desktop layout');
+      assert.ok(await visible(page, 'header nav a') >= 5, 'the desktop nav is hidden');
+    }, { viewport: { width: 1280, height: 900 } });
+  });
+
   test('the header and the footer are on every page', async () => {
     await withPage(async (page) => {
       for (const path of oneOfEach()) {
@@ -170,6 +205,16 @@ describe('progressive enhancement', () => {
       const shown = await visible(page, '[data-test="entry"]');
       assert.ok(shown > 0, 'no entries are visible without JavaScript');
     }, { javaScriptEnabled: false });
+  });
+
+  test('the menu button never appears without JavaScript', async () => {
+    // A button that does nothing is worse than a long nav. The markup ships it
+    // `hidden`; only the script reveals it.
+    await withPage(async (page) => {
+      await page.goto(`${base}/blog/`, { waitUntil: 'domcontentloaded' });
+      assert.equal(await visible(page, '.js-nav-toggle'), 0, 'a dead menu button is on screen');
+      assert.ok(await visible(page, 'header nav a') >= 5, 'the nav is collapsed with no way to open it');
+    }, { viewport: { width: 360, height: 800 }, javaScriptEnabled: false });
   });
 
   test('the whole navigation is reachable without JavaScript', async () => {

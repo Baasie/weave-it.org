@@ -85,6 +85,7 @@ must be about code being wrong, never about somebody's writing.
 | **Blocking** — contracts, URLs, browser behaviour, conformance | Every push | Yes |
 | **Conformance** — the rules on this page that a machine can read | Every push, inside the blocking suite | Yes |
 | **Content report** — what an editor could improve | Every push | No, `continue-on-error` |
+| **Browser** — layout, the filter, JavaScript off, axe | Every push, inside the blocking suite | Yes |
 | **Review** — the diff, against this file | Every push touching code | No — a separate workflow |
 
 **A test an editor can turn red from Notion must never block a deploy.** That

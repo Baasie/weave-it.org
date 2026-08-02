@@ -44,7 +44,9 @@ const jsonLd = [
     <div class="wrap">
       {
         featured.length > 0 && (
-          <ul class="grid-cards grid-cards--3 featured js-filter-hide" data-test="featured">
+          <div class="js-filter-hide" data-test="featured">
+          <h2 class="display">Latest</h2>
+          <ul class="grid-cards grid-cards--3 featured">
             {featured.map((entry) => (
               <EntryCard
                 href={`/blog/${entry.id}/`}
@@ -57,9 +59,11 @@ const jsonLd = [
               />
             ))}
           </ul>
+          </div>
         )
       }
 
+      <h2 class="display">Everything</h2>
       <TagFilter tags={tags} allLabel="All posts" noun="posts" />
 
       {
